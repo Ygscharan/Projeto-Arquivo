@@ -1,0 +1,3 @@
+from repository.BaseRepository import BaseRepository
+from repository.UsuarioRepository import UsuarioRepository
+from repository.CaixaRepository import CaixaRepository
