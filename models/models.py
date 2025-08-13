@@ -1,5 +1,3 @@
-# models.py (Versão Corrigida)
-
 from typing import List, Optional
 from sqlalchemy import (
     DateTime, ForeignKeyConstraint, Identity, Integer,
@@ -9,13 +7,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 
 
-# --- CORREÇÃO PRINCIPAL ---
-# Removido o "MappedAsDataclass". Apenas "DeclarativeBase" é necessário.
+
 class Base(DeclarativeBase):
     pass
 
 
-# --- Tabela Associativa para a relação N-para-N ---
 usuario_movimentacao_table = Table(
     'usuario_movimentacao',
     Base.metadata,
@@ -33,7 +29,7 @@ class Usuario(Base):
     senha: Mapped[str] = mapped_column(VARCHAR(50))
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
 
-    # O relacionamento agora usa a tabela ponte "usuario_movimentacao_table"
+
     movimentacoes: Mapped[List['Movimentacao']] = relationship(
         "Movimentacao",
         secondary=usuario_movimentacao_table,
@@ -50,14 +46,13 @@ class Movimentacao(Base):
     caixa_id: Mapped[int] = mapped_column(ForeignKey('caixa.id'))
     documento_id: Mapped[Optional[int]] = mapped_column(ForeignKey('documento.id'))
 
-    # Relacionamento N-para-N com Usuario
+
     usuarios: Mapped[List['Usuario']] = relationship(
         "Usuario",
         secondary=usuario_movimentacao_table,
         back_populates="movimentacoes"
     )
 
-    # Relacionamentos 1-para-N com Caixa e Documento
     caixa: Mapped['Caixa'] = relationship(back_populates='movimentacoes')
     documento: Mapped[Optional['Documento']] = relationship(back_populates='movimentacoes')
 
