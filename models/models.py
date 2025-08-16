@@ -63,6 +63,7 @@ class Caixa(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     numero_caixa: Mapped[int] = mapped_column(Integer)
     data_criacao: Mapped[datetime.datetime] = mapped_column(DateTime)
+    data_eliminacao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     unidade_id: Mapped[Optional[int]] = mapped_column(ForeignKey('unidade.id'))
     prateleira_id: Mapped[Optional[int]] = mapped_column(ForeignKey('prateleira.id'))
 
@@ -78,7 +79,6 @@ class Documento(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     titulo: Mapped[Optional[str]] = mapped_column(VARCHAR(125))
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
-    data_arquivo: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     caixa_id: Mapped[int] = mapped_column(ForeignKey('caixa.id'))
 
     caixa: Mapped['Caixa'] = relationship(back_populates='documentos')

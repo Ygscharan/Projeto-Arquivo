@@ -16,7 +16,6 @@ from models.models import (
     Unidade
 )
 
-# --- Instanciando todos os repositórios ---
 repo_usuario = UsuarioRepository()
 repo_caixa = CaixaRepository()
 repo_documento = DocumentoRepository()
@@ -26,7 +25,6 @@ repo_unidade = UnidadeRepository()
 
 
 def criar_dados_iniciais():
-    # ... (código sem alterações) ...
     print("Verificando dados iniciais...")
     if not repo_unidade.get_unidades():
         print("Criando Unidade padrão...")
@@ -41,7 +39,6 @@ def criar_dados_iniciais():
 
 
 def menu_usuario():
-    # ... (código sem alterações) ...
     while True:
         print("\n--- Menu Usuário ---")
         print("1. Listar todos")
@@ -85,7 +82,6 @@ def menu_usuario():
 
 
 def menu_caixa():
-    # ... (código sem alterações) ...
     while True:
         print("\n--- Menu Caixa ---")
         print("1. Listar todas")
@@ -105,15 +101,15 @@ def menu_caixa():
                 else:
                     localizacao = "Sem prateleira associada."
 
-                print(f"\n[ CAIXA ID: {c.id} | NÚMERO: {c.numero_caixa} ]")
+                eliminacao_str = f" | Eliminar em: {c.data_eliminacao.strftime('%d/%m/%Y')}" if c.data_eliminacao else ""
+
+                print(f"\n[ CAIXA ID: {c.id} | NÚMERO: {c.numero_caixa}{eliminacao_str} ]")
                 print(f"  {localizacao}")
 
                 if c.documentos:
                     print("  Conteúdo:")
                     for doc in c.documentos:
-                        eliminacao_str = f" | Eliminar em: {doc.data_eliminacao.strftime('%d/%m/%Y')}" if hasattr(doc,
-                                                                                                                  'data_eliminacao') and doc.data_eliminacao else ""
-                        print(f"    - ID: {doc.id}, Título: {doc.titulo} (Tipo: {doc.tipo}){eliminacao_str}")
+                        print(f"    - ID: {doc.id}, Título: {doc.titulo} (Tipo: {doc.tipo})")
                 else:
                     print("  Conteúdo: A caixa está vazia.")
                 print("-" * 50)
@@ -132,16 +128,16 @@ def menu_caixa():
                 else:
                     localizacao = "Sem prateleira associada."
 
-                print(f"\n[ CAIXA ID: {caixa.id} | NÚMERO: {caixa.numero_caixa} ]")
+                eliminacao_str = f" | Eliminar em: {caixa.data_eliminacao.strftime('%d/%m/%Y')}" if caixa.data_eliminacao else ""
+
+                print(f"\n[ CAIXA ID: {caixa.id} | NÚMERO: {caixa.numero_caixa}{eliminacao_str} ]")
                 print(f"  {localizacao}")
                 print(f"  Data de Criação: {caixa.data_criacao.strftime('%d/%m/%Y')}")
 
                 if caixa.documentos:
                     print("  Conteúdo:")
                     for doc in caixa.documentos:
-                        eliminacao_str = f" | Eliminar em: {doc.data_eliminacao.strftime('%d/%m/%Y')}" if hasattr(doc,
-                                                                                                                  'data_eliminacao') and doc.data_eliminacao else ""
-                        print(f"    - ID: {doc.id}, Título: {doc.titulo} (Tipo: {doc.tipo}){eliminacao_str}")
+                        print(f"    - ID: {doc.id}, Título: {doc.titulo} (Tipo: {doc.tipo})")
                 else:
                     print("  Conteúdo: A caixa está vazia.")
                 print("-" * 50)
@@ -152,6 +148,8 @@ def menu_caixa():
             numero = int(input("Número da Caixa: "))
             unidade = repo_unidade.get_unidades()[0]
             prateleira = repo_prateleira.get_prateleiras()[0]
+            data_eliminacao_str = input(
+                "Data de eliminação da caixa (AAAA-MM-DD) ou deixe em branco para ser indeterminada: ")
 
             nova_caixa = Caixa(
                 numero_caixa=numero,
@@ -159,6 +157,11 @@ def menu_caixa():
                 unidade_id=unidade.id,
                 prateleira_id=prateleira.id
             )
+            if data_eliminacao_str:
+                try:
+                    nova_caixa.data_eliminacao = datetime.datetime.strptime(data_eliminacao_str, "%Y-%m-%d")
+                except ValueError:
+                    print("\nERRO: Formato de data inválido! A caixa foi salva sem data de eliminação.")
 
             repo_caixa.add_caixa(nova_caixa)
             print(f"Caixa número '{numero}' cadastrada com sucesso!")
@@ -169,7 +172,6 @@ def menu_caixa():
 
 
 def menu_documento():
-    # --- MENU ATUALIZADO COM TRATAMENTO DE ERRO ---
     while True:
         print("\n--- Menu Documento ---")
         print("1. Listar todos")
@@ -181,9 +183,7 @@ def menu_documento():
             documentos = repo_documento.get_documentos()
             print("\n--- Lista de Documentos ---")
             for d in documentos:
-                eliminacao_str = f" | Eliminar em: {d.data_eliminacao.strftime('%d/%m/%Y')}" if hasattr(d,
-                                                                                                        'data_eliminacao') and d.data_eliminacao else ""
-                print(f"ID: {d.id}, Título: {d.titulo}, Caixa ID: {d.caixa_id}{eliminacao_str}")
+                print(f"ID: {d.id}, Título: {d.titulo}, Caixa ID: {d.caixa_id}")
 
         elif opcao == '2':
             caixas = repo_caixa.get_caixas()
@@ -203,21 +203,12 @@ def menu_documento():
 
                 titulo = input("Título do documento: ")
                 tipo = input("Tipo (e.g., Relatório, Contrato): ")
-                data_eliminacao_str = input("Data de eliminação (formato AAAA-MM-DD) ou deixe em branco: ")
 
                 novo_documento = Documento(
                     titulo=titulo,
                     tipo=tipo,
                     caixa_id=caixa_id
                 )
-
-                if data_eliminacao_str:
-                    # --- CORREÇÃO APLICADA AQUI ---
-                    try:
-                        novo_documento.data_eliminacao = datetime.datetime.strptime(data_eliminacao_str, "%Y-%m-%d")
-                    except ValueError:
-                        print("\nERRO: Formato de data inválido! O documento foi salvo sem data de eliminação.")
-                        print("Use o formato AAAA-MM-DD.")
 
                 repo_documento.add_documento(novo_documento)
                 print(f"Documento '{titulo}' cadastrado com sucesso na caixa ID {caixa_id}!")
@@ -231,7 +222,6 @@ def menu_documento():
 
 
 def menu_prateleira():
-    # ... (código sem alterações) ...
     while True:
         print("\n--- Menu Prateleira ---")
         print("1. Listar todas")
@@ -267,7 +257,6 @@ def menu_prateleira():
 
 
 def menu_movimentacao():
-    # ... (código sem alterações) ...
     while True:
         print("\n--- Menu Movimentação ---")
         print("1. Listar todas")
@@ -327,7 +316,6 @@ def menu_movimentacao():
 
 
 def menu_unidade():
-    # ... (código sem alterações) ...
     while True:
         print("\n--- Menu Unidade ---")
         print("1. Listar todas")
@@ -391,7 +379,6 @@ def menu_unidade():
 
 
 def main():
-    # ... (código sem alterações) ...
     criar_dados_iniciais()
     while True:
         print("\n" + "=" * 15 + " MENU PRINCIPAL " + "=" * 15)
