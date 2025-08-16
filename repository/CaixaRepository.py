@@ -8,7 +8,7 @@ class CaixaRepository(BaseRepository):
         super().__init__(Caixa)
 
     def get_caixas(self):
-        return self.find_all()
+        return self.session.query(self.model).order_by(self.model.numero_caixa.asc()).all()
 
     def get_caixa_by_id(self, caixa_id):
         return self.get_by_id(caixa_id)

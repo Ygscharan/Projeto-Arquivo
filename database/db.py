@@ -17,7 +17,4 @@ instance = f"oracle+oracledb://{USER}:{PASSWD}@{HOST}/?service_name={SID}"
 engine = create_engine(instance, echo=True,)
 
 session = scoped_session(sessionmaker(bind=engine))
-usuario = session.execute(text("SELECT * FROM usuario"))
 
-for usuario in usuario:
-    print(instance)
