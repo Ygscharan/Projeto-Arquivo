@@ -101,8 +101,9 @@ class Movimentacao(Base):
 
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
     data: Mapped[datetime.datetime] = mapped_column(DateTime)
-    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey('usuario.id'))
-    caixa_id: Mapped[int] = mapped_column(Integer, ForeignKey('caixa.id'))
+
+    usuario_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('usuario.id'), default=None)
+    caixa_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('caixa.id'), default=None)
 
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
 

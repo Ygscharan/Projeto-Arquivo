@@ -393,7 +393,6 @@ def menu_caixa():
 
 
 # ---------------- MENU DOCUMENTO ----------------
-# ---------------- MENU DOCUMENTO ----------------
 def menu_documento():
     while True:
         print("\n--- Menu Documento ---")
@@ -579,6 +578,7 @@ def menu_unidade():
             break
 
 # ---------------- MENU MOVIMENTAÇÃO ----------------
+# ---------------- MENU MOVIMENTAÇÃO ----------------
 def menu_movimentacao():
     while True:
         print("\n--- Menu Movimentação ---")
@@ -595,7 +595,11 @@ def menu_movimentacao():
                 print(f"ID: {m.id}, Tipo: {m.tipo}, Data: {m.data}, Usuário: {m.usuario_id}, Caixa: {m.caixa_id}")
 
         elif opcao == '2':
-            id_busca = int(input("Digite o ID da movimentação: "))
+            try:
+                id_busca = int(input("Digite o ID da movimentação: "))
+            except ValueError:
+                print("ID inválido.")
+                continue
             movimentacao = repo_movimentacao.get_by_id(id_busca)
             if movimentacao:
                 print(f"Encontrado: ID {movimentacao.id}, Tipo {movimentacao.tipo}")
@@ -603,16 +607,69 @@ def menu_movimentacao():
                 print("Movimentação não encontrada.")
 
         elif opcao == '3':
-            tipo = input("Tipo: ")
+            # 1. Obter e listar usuários disponíveis
+            usuarios_disp = repo_usuario.get_all()
+            if not usuarios_disp:
+                print("Erro: Nenhum usuário cadastrado para associar à movimentação. Crie um usuário primeiro.")
+                continue
+
+            print("\nUsuários disponíveis:")
+            for u in usuarios_disp:
+                print(f"ID: {u.id} - Nome: {u.nome}")
+
+            try:
+                usuario_id_input = int(input("ID do usuário para a movimentação: ").strip())
+            except ValueError:
+                print("ID de usuário inválido.")
+                continue
+
+            usuario = repo_usuario.get_by_id(usuario_id_input)
+            if not usuario:
+                print("Usuário não encontrado. Tente novamente.")
+                continue
+
+            # 2. Obter e listar caixas disponíveis
+            caixas_disp = repo_caixa.get_all()
+            if not caixas_disp:
+                print("Erro: Nenhuma caixa cadastrada para associar à movimentação. Crie uma caixa primeiro.")
+                continue
+
+            print("\nCaixas disponíveis:")
+            for c in caixas_disp:
+                print(f"ID: {c.id} - Número: {c.numero_caixa}")
+
+            try:
+                caixa_id_input = int(input("ID da caixa para a movimentação: ").strip())
+            except ValueError:
+                print("ID de caixa inválido.")
+                continue
+
+            caixa = repo_caixa.get_by_id(caixa_id_input)
+            if not caixa:
+                print("Caixa não encontrada. Tente novamente.")
+                continue
+
+            # 3. Criar a nova movimentação com os IDs válidos
+            tipo = input("Tipo da movimentação: ")
             data = datetime.datetime.now()
-            usuario = repo_usuario.get_all()[0]
-            caixa = repo_caixa.get_all()[0]
-            nova_mov = Movimentacao(tipo=tipo, data=data, usuario_id=usuario.id, caixa_id=caixa.id)
+
+            # ESTA É A FORMA QUE DEVE FUNCIONAR AGORA, PASSANDO OS IDs.
+            nova_mov = Movimentacao(
+                tipo=tipo,
+                data=data,
+                usuario=usuario,
+                caixa=caixa
+            )
+
             repo_movimentacao.add(nova_mov)
             print("Movimentação criada com sucesso!")
 
         elif opcao == '4':
-            id_del = int(input("ID da movimentação para excluir: "))
+            try:
+                id_del = int(input("ID da movimentação para excluir: "))
+            except ValueError:
+                print("ID inválido.")
+                continue
             repo_movimentacao.delete(id_del)
             print("Movimentação excluída.")
 
