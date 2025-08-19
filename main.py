@@ -100,7 +100,8 @@ def menu_caixa():
         print("1. Listar todas")
         print("2. Buscar por ID")
         print("3. Cadastrar nova")
-        print("4. Voltar")
+        print("4. Editar caixa")
+        print("5. Voltar")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
@@ -112,7 +113,20 @@ def menu_caixa():
                     data_elim_str = "CAIXA PERMANENTE"
                 docs = getattr(c, "documentos", None) or []
                 docs_str = "; ".join(f"{d.id}:{d.titulo}" for d in docs) if docs else "Nenhum documento"
-                print(f"ID: {c.id}, Número: {c.numero_caixa}, Unidade: {c.unidade_id}, Eliminação: {data_elim_str}, Prateleira: {c.prateleira_id}, Documentos: {docs_str}")
+
+                unidade = getattr(c, "unidade", None)
+                if unidade:
+                    unidade_str = f"{unidade.nome} (Código: {unidade.codigo})"
+                else:
+                    unidade_str = f"ID:{getattr(c, 'unidade_id', 'None')}"
+
+                pr = getattr(c, "prateleira", None)
+                if pr:
+                    prateleira_str = f"{pr.setor} - Corredor:{pr.corredor} Coluna:{pr.coluna} Nível:{pr.nivel}"
+                else:
+                    prateleira_str = f"ID:{getattr(c, 'prateleira_id', 'None')}"
+
+                print(f"ID: {c.id}, Número: {c.numero_caixa}, Unidade: {unidade_str}, Eliminação: {data_elim_str}, Prateleira: {prateleira_str}, Documentos: {docs_str}")
 
         elif opcao == '2':
             try:
@@ -125,7 +139,20 @@ def menu_caixa():
                 de = caixa.data_eliminacao.strftime("%Y-%m-%d") if getattr(caixa, "data_eliminacao", None) else "CAIXA PERMANENTE"
                 docs = getattr(caixa, "documentos", None) or []
                 docs_str = "; ".join(f"{d.id}:{d.titulo}" for d in docs) if docs else "Nenhum documento"
-                print(f"Encontrado: ID {caixa.id}, Número {caixa.numero_caixa}, Eliminação: {de}, Unidade: {caixa.unidade_id}, Prateleira: {caixa.prateleira_id}, Documentos: {docs_str}")
+
+                unidade = getattr(caixa, "unidade", None)
+                if unidade:
+                    unidade_str = f"{unidade.nome} (Código: {unidade.codigo})"
+                else:
+                    unidade_str = f"ID:{getattr(caixa, 'unidade_id', 'None')}"
+
+                pr = getattr(caixa, "prateleira", None)
+                if pr:
+                    prateleira_str = f"{pr.setor} - Corredor:{pr.corredor} Coluna:{pr.coluna} Nível:{pr.nivel}"
+                else:
+                    prateleira_str = f"ID:{getattr(caixa, 'prateleira_id', 'None')}"
+
+                print(f"Encontrado: ID {caixa.id}, Número {caixa.numero_caixa}, Eliminação: {de}, Unidade: {unidade_str}, Prateleira: {prateleira_str}, Documentos: {docs_str}")
             else:
                 print("Caixa não encontrada.")
 
@@ -165,7 +192,6 @@ def menu_caixa():
                     print("Unidade não encontrada.")
                     continue
 
-
             print("\nPrateleiras disponíveis:")
             for p in prateleiras:
                 print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Coluna: {p.coluna} - Nível: {p.nivel}")
@@ -190,7 +216,7 @@ def menu_caixa():
                 for d in documentos:
                     print(f"ID: {d.id} - Título: {d.titulo} - Tipo: {d.tipo}")
             else:
-                print("  (nenhum documento cadastrado)")
+                print("  (nenhum documento cadastrado)")
             ids_input = input("IDs dos documentos para associar (vírgula-separados, enter para nenhum): ").strip()
             if ids_input:
                 for part in ids_input.split(','):
@@ -208,58 +234,268 @@ def menu_caixa():
                     else:
                         print(f"Documento com ID {did} não encontrado; ignorado.")
 
-
-            print(f"DEBUG: unidade.id={getattr(unidade, 'id', None)} prateleira.id={getattr(prateleira, 'id', None)}")
-
-
             nova_caixa = Caixa(
                 numero_caixa=numero,
                 data_criacao=datetime.datetime.now(),
                 data_eliminacao=data_elim
             )
-
             nova_caixa.unidade = unidade
             nova_caixa.prateleira = prateleira
-
             if selected_docs:
                 nova_caixa.documentos = selected_docs
-
             repo_caixa.add(nova_caixa)
             print(f"Caixa {numero} criada com sucesso!")
 
         elif opcao == '4':
+            ## CÓDIGO ADICIONADO AQUI
+            caixas_disponiveis = repo_caixa.get_all()
+            if not caixas_disponiveis:
+                print("Nenhuma caixa cadastrada.")
+                continue
+            
+            print("\nCaixas disponíveis para edição:")
+            for c in caixas_disponiveis:
+                print(f"ID: {c.id} - Número: {c.numero_caixa}")
+            
+            try:
+                eid = int(input("Digite o ID da caixa a editar: ").strip())
+            except ValueError:
+                print("ID inválido.")
+                continue
+            caixa = repo_caixa.get_by_id(eid)
+            if not caixa:
+                print("Caixa não encontrada.")
+                continue
+
+            print(f"\nEditando Caixa ID {caixa.id} - Número atual: {caixa.numero_caixa}")
+            print("1. Alterar número da caixa")
+            print("2. Alterar unidade")
+            print("3. Alterar prateleira")
+            print("4. Adicionar documentos")
+            print("5. Remover documentos")
+            print("6. Alterar data de eliminação")
+            print("7. Cancelar")
+            escolha = input("Escolha a opção a alterar: ").strip()
+
+            if escolha == '1':
+                try:
+                    novo_num = int(input("Novo número da caixa: "))
+                except ValueError:
+                    print("Número inválido.")
+                    continue
+                caixa.numero_caixa = novo_num
+
+            elif escolha == '2':
+                unidades = repo_unidade.get_all()
+                print("\nUnidades disponíveis:")
+                for u in unidades:
+                    print(f"ID: {u.id} - Nome: {u.nome} - Código: {u.codigo}")
+                uid_in = input("ID da nova unidade (enter para cancelar): ").strip()
+                if uid_in == "":
+                    print("Operação cancelada.")
+                else:
+                    try:
+                        uid = int(uid_in)
+                    except ValueError:
+                        print("ID inválido.")
+                        continue
+                    unidade = repo_unidade.get_by_id(uid)
+                    if not unidade:
+                        print("Unidade não encontrada.")
+                        continue
+                    caixa.unidade = unidade
+
+            elif escolha == '3':
+                prateleiras = repo_prateleira.get_all()
+                print("\nPrateleiras disponíveis:")
+                for p in prateleiras:
+                    print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Coluna: {p.coluna} - Nível: {p.nivel}")
+                pid_in = input("ID da nova prateleira (enter para cancelar): ").strip()
+                if pid_in == "":
+                    print("Operação cancelada.")
+                else:
+                    try:
+                        pid = int(pid_in)
+                    except ValueError:
+                        print("ID inválido.")
+                        continue
+                    prateleira = repo_prateleira.get_by_id(pid)
+                    if not prateleira:
+                        print("Prateleira não encontrada.")
+                        continue
+                    caixa.prateleira = prateleira
+
+            elif escolha == '4':
+                documentos = repo_documento.get_all()
+                print("\nDocumentos disponíveis para adicionar:")
+                for d in documentos:
+                    print(f"ID: {d.id} - Título: {d.titulo}")
+                ids_in = input("IDs para adicionar (vírgula-separados, enter para cancelar): ").strip()
+                if ids_in:
+                    for part in ids_in.split(','):
+                        part = part.strip()
+                        if not part:
+                            continue
+                        try:
+                            did = int(part)
+                        except ValueError:
+                            print(f"Ignorando ID inválido: {part}")
+                            continue
+                        doc = repo_documento.get_by_id(did)
+                        if doc and doc not in (caixa.documentos or []):
+                            caixa.documentos.append(doc)
+                    print("Documentos adicionados (se válidos).")
+
+            elif escolha == '5':
+                docs = caixa.documentos or []
+                if not docs:
+                    print("Caixa não tem documentos associados.")
+                else:
+                    print("\nDocumentos atuais na caixa:")
+                    for d in docs:
+                        print(f"ID: {d.id} - Título: {d.titulo}")
+                    ids_out = input("IDs para remover (vírgula-separados, enter para cancelar): ").strip()
+                    if ids_out:
+                        for part in ids_out.split(','):
+                            part = part.strip()
+                            if not part:
+                                continue
+                            try:
+                                did = int(part)
+                            except ValueError:
+                                print(f"Ignorando ID inválido: {part}")
+                                continue
+                            caixa.documentos = [d for d in caixa.documentos if d.id != did]
+                        print("Remoções aplicadas.")
+
+            elif escolha == '6':
+                di = input("Nova data de eliminação (enter para CAIXA PERMANENTE / vazio cancela): ").strip()
+                if di == "":
+                    caixa.data_eliminacao = None
+                else:
+                    nd = parse_data_flexivel(di)
+                    if nd is None:
+                        print("Formato de data inválido.")
+                        continue
+                    if hasattr(caixa, "data_eliminacao"):
+                        caixa.data_eliminacao = nd
+
+            elif escolha == '7':
+                print("Edição cancelada.")
+                continue
+
+            # salvar alterações
+            repo_caixa.update(caixa)
+            print("Alterações salvas com sucesso.")
+
+        elif opcao == '5':
             break
 
 
+# ---------------- MENU DOCUMENTO ----------------
 # ---------------- MENU DOCUMENTO ----------------
 def menu_documento():
     while True:
         print("\n--- Menu Documento ---")
         print("1. Listar todos")
         print("2. Cadastrar novo")
-        print("3. Excluir")
-        print("4. Voltar")
+        print("3. Editar documento")
+        print("4. Excluir")
+        print("5. Voltar")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
             documentos = repo_documento.get_all()
             for d in documentos:
-                print(f"ID: {d.id}, Título: {d.titulo}, Tipo: {d.tipo}")
+                de_str = d.data_emissao.strftime("%Y-%m-%d") if getattr(d, "data_emissao", None) else "Sem data"
+                print(f"ID: {d.id}, Título: {d.titulo}, Tipo: {d.tipo}, Data Emissão: {de_str}")
 
         elif opcao == '2':
             titulo = input("Título: ")
             tipo = input("Tipo: ")
-            data_emissao = datetime.datetime.now()
+            # opcional: pedir data de emissão
+            data_input = input("Data de emissão (enter para usar data atual / vazio para sem data) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
+            if data_input == "":
+                data_emissao = datetime.datetime.now()
+            else:
+                data_emissao = parse_data_flexivel(data_input)
+                if data_emissao is None:
+                    print("Formato de data inválido. Documento não criado.")
+                    continue
             novo_doc = Documento(titulo=titulo, tipo=tipo)
+            # atribuir data_emissao somente se modelo/tabela suportarem
+            if hasattr(novo_doc, "data_emissao"):
+                novo_doc.data_emissao = data_emissao
             repo_documento.add(novo_doc)
             print("Documento criado com sucesso!")
 
         elif opcao == '3':
-            id_del = int(input("ID do documento para excluir: "))
+            ## CÓDIGO ADICIONADO AQUI
+            documentos_disponiveis = repo_documento.get_all()
+            if not documentos_disponiveis:
+                print("Nenhum documento cadastrado.")
+                continue
+
+            print("\nDocumentos disponíveis para edição:")
+            for d in documentos_disponiveis:
+                print(f"ID: {d.id} - Título: {d.titulo}")
+
+            try:
+                id_edit = int(input("ID do documento para editar: "))
+            except ValueError:
+                print("ID inválido.")
+                continue
+            doc = repo_documento.get_by_id(id_edit)
+            if not doc:
+                print("Documento não encontrado.")
+                continue
+
+            print(f"\nEditando Documento ID {doc.id}")
+            print(f"1. Título (atual: {doc.titulo})")
+            print(f"2. Tipo (atual: {doc.tipo})")
+            current_de = doc.data_emissao.strftime('%Y-%m-%d') if getattr(doc, 'data_emissao', None) else 'Sem data'
+            print(f"3. Data de Emissão (atual: {current_de})")
+            print("4. Cancelar")
+            opt = input("Escolha o campo a alterar: ").strip()
+
+            if opt == '1':
+                novo_titulo = input("Novo título (enter para manter atual): ").strip()
+                if novo_titulo != "":
+                    doc.titulo = novo_titulo
+            elif opt == '2':
+                novo_tipo = input("Novo tipo (enter para manter atual): ").strip()
+                if novo_tipo != "":
+                    doc.tipo = novo_tipo
+            elif opt == '3':
+                di = input("Nova data de emissão (enter para remover / vazio cancela) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
+                if di == "":
+                    # remover data
+                    if hasattr(doc, "data_emissao"):
+                        doc.data_emissao = None
+                else:
+                    nd = parse_data_flexivel(di)
+                    if nd is None:
+                        print("Formato de data inválido. Alteração cancelada.")
+                        continue
+                    if hasattr(doc, "data_emissao"):
+                        doc.data_emissao = nd
+            else:
+                print("Edição cancelada.")
+                continue
+
+            repo_documento.update(doc)
+            print("Documento atualizado com sucesso.")
+
+        elif opcao == '4':
+            try:
+                id_del = int(input("ID do documento para excluir: "))
+            except ValueError:
+                print("ID inválido.")
+                continue
             repo_documento.delete(id_del)
             print("Documento excluído.")
 
-        elif opcao == '4':
+        elif opcao == '5':
             break
 
 # ---------------- MENU PRATELEIRA ----------------
