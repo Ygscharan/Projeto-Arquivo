@@ -1,6 +1,9 @@
 import datetime
 from models.models import Usuario, Caixa, Documento, Prateleira, Unidade, Movimentacao
 
+from services.auth_service import initialize_firebase, login_with_email_password
+import getpass
+
 from repository.CaixaRepository import CaixaRepository
 from repository.DocumentoRepository import DocumentoRepository
 from repository.MovimentacaoRepository import MovimentacaoRepository
@@ -676,36 +679,63 @@ def menu_movimentacao():
         elif opcao == '5':
             break
 
-def menu_principal():
-    while True:
-        print("\n===== MENU PRINCIPAL =====")
-        print("1. Usuários")
-        print("2. Caixas")
-        print("3. Documentos")
-        print("4. Prateleiras")
-        print("5. Unidades")
-        print("6. Movimentações")
-        print("7. Sair")
-        opcao = input("Escolha: ")
 
-        if opcao == '1':
-            menu_usuario()
-        elif opcao == '2':
-            menu_caixa()
-        elif opcao == '3':
-            menu_documento()
-        elif opcao == '4':
-            menu_prateleira()
-        elif opcao == '5':
-            menu_unidade()
-        elif opcao == '6':
-            menu_movimentacao()
-        elif opcao == '7':
-            break
+def login():
+    print("\n--- Autenticação ---")
+    email = input("E-mail: ")
+    password = getpass.getpass("Senha: ")
+    usuario_logado = login_with_email_password(email, password)
+    
+    return usuario_logado
+
+
+def menu_principal():
+    usuario_atual = None
+    
+    while True:
+        if usuario_atual:
+            print("\n===== MENU PRINCIPAL =====")
+            print("1. Usuários")
+            print("2. Caixas")
+            print("3. Documentos")
+            print("4. Prateleiras")
+            print("5. Unidades")
+            print("6. Movimentações")
+            print("7. Logout")
+            print("8. Sair")
+            opcao = input("Escolha: ")
+
+            if opcao == '1':
+                menu_usuario()
+            elif opcao == '2':
+                menu_caixa()
+            elif opcao == '3':
+                menu_documento()
+            elif opcao == '4':
+                menu_prateleira()
+            elif opcao == '5':
+                menu_unidade()
+            elif opcao == '6':
+                menu_movimentacao()
+            elif opcao == '7':
+                usuario_atual = None
+                print("Logout realizado.")
+            elif opcao == '8':
+                break
+        else:
+            print("\n===== MENU PRINCIPAL =====")
+            print("1. Fazer Login")
+            print("2. Sair")
+            opcao = input("Escolha: ")
+            if opcao == '1':
+                usuario_atual = login()
+            elif opcao == '2':
+                break
 
 def main():
-    criar_dados_iniciais()
-    menu_principal()
+    if initialize_firebase():
+        criar_dados_iniciais()
+        menu_principal()
 
 
 if __name__ == "__main__":
