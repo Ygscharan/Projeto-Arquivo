@@ -148,7 +148,6 @@ def menu_caixa():
                 print("Unidade ou prateleira padrão não encontrada. Crie antes de adicionar caixas.")
                 continue
 
-            # escolher unidade explicitamente
             print("\nUnidades disponíveis:")
             for u in unidades:
                 print(f"ID: {u.id} - Nome: {u.nome} - Código: {u.codigo}")
@@ -166,7 +165,7 @@ def menu_caixa():
                     print("Unidade não encontrada.")
                     continue
 
-            # escolher prateleira explicitamente (melhora confiabilidade)
+
             print("\nPrateleiras disponíveis:")
             for p in prateleiras:
                 print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Coluna: {p.coluna} - Nível: {p.nivel}")
@@ -184,7 +183,6 @@ def menu_caixa():
                     print("Prateleira não encontrada.")
                     continue
 
-            # lista documentos disponíveis
             documentos = repo_documento.get_all()
             selected_docs = []
             print("\nDocumentos disponíveis:")
@@ -210,21 +208,22 @@ def menu_caixa():
                     else:
                         print(f"Documento com ID {did} não encontrado; ignorado.")
 
-            # DEBUG: verificar ids antes de criar
+
             print(f"DEBUG: unidade.id={getattr(unidade, 'id', None)} prateleira.id={getattr(prateleira, 'id', None)}")
+
 
             nova_caixa = Caixa(
                 numero_caixa=numero,
                 data_criacao=datetime.datetime.now(),
-                data_eliminacao=data_elim,
-                unidade_id=int(unidade.id) if getattr(unidade, 'id', None) is not None else None,
-                prateleira_id=int(prateleira.id) if getattr(prateleira, 'id', None) is not None else None
+                data_eliminacao=data_elim
             )
+
+            nova_caixa.unidade = unidade
+            nova_caixa.prateleira = prateleira
 
             if selected_docs:
                 nova_caixa.documentos = selected_docs
 
-            # usa repo_caixa.add que faz flush/commit (ver arquivo do repo)
             repo_caixa.add(nova_caixa)
             print(f"Caixa {numero} criada com sucesso!")
 

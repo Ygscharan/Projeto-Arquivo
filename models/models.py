@@ -68,19 +68,20 @@ class Caixa(Base):
     __tablename__ = 'caixa'
     __table_args__ = (PrimaryKeyConstraint('id', name='caixa_pk'),)
 
-    # required (no default) fields first
+    # campos obrigatórios (sem default) primeiro
     numero_caixa: Mapped[int] = mapped_column(Integer)
     data_criacao: Mapped[datetime.datetime] = mapped_column(DateTime)
-    unidade_id: Mapped[int] = mapped_column(Integer, ForeignKey('unidade.id'))
-    prateleira_id: Mapped[int] = mapped_column(Integer, ForeignKey('prateleira.id'))
 
-    # optional / defaults after
+    # campos opcionais / com default depois
+    unidade_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('unidade.id'), default=None)
+    prateleira_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('prateleira.id'), default=None)
     data_eliminacao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, default=None)
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
 
-    prateleira: Mapped[Optional[Prateleira]] = relationship('Prateleira', back_populates='caixas', default=None)
-    unidade: Mapped[Optional[Unidade]] = relationship('Unidade', back_populates='caixas', default=None)
-    documentos: Mapped[List[Documento]] = relationship('Documento', secondary='caixa_documento', back_populates='caixas', default_factory=list)
+    # relationships (defaults)
+    prateleira: Mapped[Optional['Prateleira']] = relationship('Prateleira', back_populates='caixas', default=None)
+    unidade: Mapped[Optional['Unidade']] = relationship('Unidade', back_populates='caixas', default=None)
+    documentos: Mapped[List['Documento']] = relationship('Documento', secondary='caixa_documento', back_populates='caixas', default_factory=list)
     movimentacoes: Mapped[List['Movimentacao']] = relationship('Movimentacao', back_populates='caixa', default_factory=list)
 
 

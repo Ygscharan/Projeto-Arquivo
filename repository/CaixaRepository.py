@@ -19,7 +19,7 @@ class CaixaRepository:
 
     def add(self, caixa: Caixa) -> None:
         self.session.add(caixa)
-        self.session.flush()   # envia INSERT para obter PK/valores corretos
+        self.session.flush()
         self.session.commit()
 
     def update(self, caixa: Caixa) -> None:
@@ -27,7 +27,7 @@ class CaixaRepository:
         self.session.commit()
 
     def delete(self, caixa_id: int) -> None:
-        caixa = self.get_by_id(caixa_id)
-        if caixa:
-            self.session.delete(caixa)
+        obj = self.get_by_id(caixa_id)
+        if obj:
+            self.session.delete(obj)
             self.session.commit()
