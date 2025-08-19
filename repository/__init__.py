@@ -1,7 +1,0 @@
-from repository.BaseRepository import BaseRepository
-from repository.UsuarioRepository import UsuarioRepository
-from repository.CaixaRepository import CaixaRepository
-from repository.DocumentoRepository import DocumentoRepository
-from repository.MovimentacaoRepository import MovimentacaoRepository
-from repository.PrateleiraRepository import PrateleiraRepository
-from repository.UnidadeRepository import UnidadeRepository

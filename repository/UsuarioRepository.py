@@ -1,30 +1,31 @@
+from database.db import session
 from models.models import Usuario
-from repository.BaseRepository import BaseRepository
 
-class UsuarioRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(Usuario)
+class UsuarioRepository:
+    def __init__(self, session=session):
+        self.session = session
 
-    def get_usuarios(self):
-        return self.find_all()
+    def get_by_id(self, usuario_id: int) -> Usuario | None:
+        return self.session.query(Usuario).filter(Usuario.id == usuario_id).first()
 
-    def get_usuario_by_id(self, usuario_id):
-        return self.get_by_id(usuario_id)
+    def get_all(self) -> list[Usuario]:
+        return self.session.query(Usuario).all()
 
-    def add_usuario(self, usuario):
-        return self.save(usuario)
+    def get_by_nome(self, nome: str) -> list[Usuario]:
+        return self.session.query(Usuario).filter(Usuario.nome.ilike(f"%{nome}%")).all()
 
-    def update_usuario(self, usuario):
-        return self.update(usuario)
+    def get_by_email(self, email: str) -> Usuario | None:
+        return self.session.query(Usuario).filter(Usuario.email == email).first()
 
-    def delete_usuario(self, usuario_id):
-        return self.delete(usuario_id)
+    def add(self, usuario: Usuario) -> None:
+        self.session.add(usuario)
+        self.session.commit()
 
-    def find_by_email(self, email):
-        return self.session.query(self.model).filter(self.model.email == email).first()
+    def update(self, usuario: Usuario) -> None:
+        self.session.merge(usuario)
+        self.session.commit()
 
-    def find_by_nome(self, nome):
-        return self.session.query(self.model).filter(self.model.nome.ilike(f'%{nome}%')).all()
-
-    def find_by_tipo(self, tipo):
-        return self.session.query(self.model).filter(self.model.tipo == tipo).all()
+    def delete(self, usuario_id: int) -> None:
+        usuario = self.get_by_id(usuario_id)
+        if usuario:
+            self.session.delete(usuario)

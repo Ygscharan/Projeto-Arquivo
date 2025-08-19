@@ -1,36 +1,36 @@
-from models.models import Documento, Caixa
-from repository.BaseRepository import BaseRepository
+from database.db import session
+from models.models import Documento
 
 
-class DocumentoRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(Documento)
+class DocumentoRepository:
+    def __init__(self, session=session):
+        self.session = session
 
+    def get_by_id(self, documento_id: int) -> Documento | None:
+        return self.session.query(Documento).filter(Documento.id == documento_id).first()
 
-    def get_documentos(self):
-        return self.find_all()
+    def get_all(self) -> list[Documento]:
+        return self.session.query(Documento).all()
 
-    def get_documento_by_id(self, documento_id):
-        return self.get_by_id(documento_id)
+    def get_by_tipo(self, tipo: str) -> list[Documento]:
+        return self.session.query(Documento).filter(Documento.tipo == tipo).all()
 
-    def add_documento(self, documento):
-        return self.save(documento)
+    def get_by_titulo(self, titulo: str) -> list[Documento]:
+        return self.session.query(Documento).filter(Documento.titulo.ilike(f"%{titulo}%")).all()
 
-    def update_documento(self, documento):
-        return self.update(documento)
+    def get_by_data_emissao(self, data_emissao) -> list[Documento]:
+        return self.session.query(Documento).filter(Documento.data_emissao == data_emissao).all()
 
-    def delete_documento(self, documento_id):
-        return self.delete(documento_id)
+    def add(self, documento: Documento) -> None:
+        self.session.add(documento)
+        self.session.commit()
 
+    def update(self, documento: Documento) -> None:
+        self.session.merge(documento)
+        self.session.commit()
 
-    def find_by_titulo(self, termo_busca):
-        return self.session.query(self.model).filter(self.model.titulo.ilike(f'%{termo_busca}%')).all()
-
-    def find_by_tipo(self, tipo_documento):
-        return self.session.query(self.model).filter(self.model.tipo == tipo_documento).all()
-
-    def find_by_caixa_id(self, caixa_id):
-        return self.session.query(self.model).filter(self.model.caixa_id == caixa_id).all()
-
-    def count_documentos_na_caixa(self, caixa_id):
-        return self.session.query(self.model).filter(self.model.caixa_id == caixa_id).count()
+    def delete(self, documento_id: int) -> None:
+        documento = self.get_by_id(documento_id)
+        if documento:
+            self.session.delete(documento)
+            self.session.commit()

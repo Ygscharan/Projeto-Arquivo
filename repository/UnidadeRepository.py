@@ -1,29 +1,26 @@
+from database.db import session
 from models.models import Unidade
-from repository.BaseRepository import BaseRepository
 
-class UnidadeRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(Unidade)
+class UnidadeRepository:
+    def __init__(self, session=session):
+        self.session = session
 
+    def get_by_id(self, unidade_id: int) -> Unidade | None:
+        return self.session.query(Unidade).filter(Unidade.id == unidade_id).first()
 
-    def get_unidades(self):
-        return self.find_all()
+    def get_all(self) -> list[Unidade]:
+        return self.session.query(Unidade).all()
 
-    def get_unidade_by_id(self, unidade_id):
-        return self.get_by_id(unidade_id)
+    def get_by_nome(self, nome: str) -> list[Unidade]:
+        return self.session.query(Unidade).filter(Unidade.nome.ilike(f"%{nome}%")).all()
 
-    def add_unidade(self, unidade):
-        return self.save(unidade)
+    def add(self, unidade: Unidade) -> None:
+        self.session.add(unidade)
+        self.session.commit()
 
-    def update_unidade(self, unidade):
-        return self.update(unidade)
+    def update(self, unidade: Unidade) -> None:
+        self.session.merge(unidade)
+        self.session.commit()
 
-    def delete_unidade(self, unidade_id):
-        return self.delete(unidade_id)
-
-
-    def find_by_codigo(self, codigo_unidade):
-        return self.session.query(self.model).filter(self.model.codigo == codigo_unidade).first()
-
-    def find_by_nome(self, nome_unidade):
-        return self.session.query(self.model).filter(self.model.nome.ilike(f'%{nome_unidade}%')).all()
+    def delete(self, unidade_id: int) -> None:
+        unidade = self.get_by_id(unidade_id)

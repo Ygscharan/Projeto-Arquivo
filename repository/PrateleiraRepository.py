@@ -1,29 +1,41 @@
+from database.db import session
 from models.models import Prateleira, Caixa
-from repository.BaseRepository import BaseRepository
-from sqlalchemy.orm import aliased
 
+class PrateleiraRepository():
+    def __init__(self, session=session):
+        self.session = session
 
-class PrateleiraRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(Prateleira)
+    def get_by_id(self, prateleira_id: int) -> Prateleira | None:
+        return self.session.query(Prateleira).filter(Prateleira.id == prateleira_id).first()
 
+    def get_all(self) -> list[Prateleira]:
+        return self.session.query(Prateleira).all()
 
-    def get_prateleiras(self):
-        return self.find_all()
+    def get_by_setor(self, setor: str) -> list[Prateleira]:
+        return self.session.query(Prateleira).filter(Prateleira.setor == setor).all()
 
-    def get_prateleira_by_id(self, prateleira_id):
-        return self.get_by_id(prateleira_id)
+    def get_by_corredor(self, corredor: int) -> list[Prateleira]:
+        return self.session.query(Prateleira).filter(Prateleira.corredor == corredor).all()
 
-    def add_prateleira(self, prateleira):
-        return self.save(prateleira)
+    def get_by_coluna(self, coluna: int) -> list[Prateleira]:
+        return self.session.query(Prateleira).filter(Prateleira.coluna == coluna).all()
 
-    def update_prateleira(self, prateleira):
-        return self.update(prateleira)
+    def get_by_nivel(self, nivel: int) -> list[Prateleira]:
+        return self.session.query(Prateleira).filter(Prateleira.nivel == nivel).all()
 
-    def delete_prateleira(self, prateleira_id):
-        return self.delete(prateleira_id)
+    def add(self, prateleira: Prateleira) -> None:
+        self.session.add(prateleira)
+        self.session.commit()
 
+    def update(self, prateleira: Prateleira) -> None:
+        self.session.merge(prateleira)
+        self.session.commit()
 
+    def delete(self, prateleira_id: int) -> None:
+        prateleira = self.get_by_id(prateleira_id)
+        if prateleira:
+            self.session.delete(prateleira)
+            self.session.commit()
 
     def find_by_localizacao(self, setor, corredor=None, coluna=None, nivel=None):
         query = self.session.query(self.model).filter(self.model.setor == setor)

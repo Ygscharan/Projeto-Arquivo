@@ -1,46 +1,33 @@
-from models.models import Movimentacao, Usuario, Caixa
-from repository.BaseRepository import BaseRepository
-import datetime
+from database.db import session
+from models.models import Movimentacao
 
 
-class MovimentacaoRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(Movimentacao)
+class MovimentacaoRepository:
+    def __init__(self, session=session):
+        self.session = session
 
+    def get_by_id(self, movimentacao_id: int) -> Movimentacao | None:
+        return self.session.query(Movimentacao).filter(Movimentacao.id == movimentacao_id).first()
 
-    def get_movimentacoes(self):
-        return self.find_all()
+    def get_all(self) -> list[Movimentacao]:
+        return self.session.query(Movimentacao).all()
 
-    def get_movimentacao_by_id(self, movimentacao_id):
-        return self.get_by_id(movimentacao_id)
+    def get_by_caixa(self, caixa_id: int) -> list[Movimentacao]:
+        return self.session.query(Movimentacao).filter(Movimentacao.caixa_id == caixa_id).all()
 
-    def add_movimentacao(self, movimentacao):
-        return self.save(movimentacao)
+    def get_by_usuario(self, usuario_id: int) -> list[Movimentacao]:
+        return self.session.query(Movimentacao).filter(Movimentacao.usuario_id == usuario_id).all()
 
-    def update_movimentacao(self, movimentacao):
-        return self.update(movimentacao)
+    def get_by_data(self, data) -> list[Movimentacao]:
+        return self.session.query(Movimentacao).filter(Movimentacao.data == data).all()
 
-    def delete_movimentacao(self, movimentacao_id):
-        return self.delete(movimentacao_id)
+    def add(self, movimentacao: Movimentacao) -> None:
+        self.session.add(movimentacao)
+        self.session.commit()
 
+    def update(self, movimentacao: Movimentacao) -> None:
+        self.session.merge(movimentacao)
+        self.session.commit()
 
-
-    def find_by_caixa_id(self, caixa_id):
-        return self.session.query(self.model).filter(self.model.caixa_id == caixa_id).order_by(
-            self.model.data.desc()).all()
-
-    def find_by_usuario_id(self, usuario_id):
-        return self.session.query(Movimentacao).filter(Movimentacao.usuarios.any(id=usuario_id)).all()
-
-    def find_by_tipo(self, tipo_movimentacao):
-        return self.session.query(self.model).filter(self.model.tipo == tipo_movimentacao).all()
-
-    def find_by_date_range(self, data_inicio, data_fim):
-        return self.session.query(self.model).filter(
-            self.model.data.between(data_inicio, data_fim)
-        ).all()
-
-    def find_latest_movimentacao_for_caixa(self, caixa_id):
-        return self.session.query(self.model).filter(
-            self.model.caixa_id == caixa_id
-        ).order_by(self.model.data.desc()).first()
+    def delete(self, movimentacao_id: int) -> None:
+        movimentacao = self.get_by_id(movimentacao_id)

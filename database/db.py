@@ -18,3 +18,5 @@ engine = create_engine(instance, echo=True,)
 
 session = scoped_session(sessionmaker(bind=engine))
 
+
+print(instance)

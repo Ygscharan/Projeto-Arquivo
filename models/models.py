@@ -1,83 +1,109 @@
+from sqlalchemy import Column, DateTime, Integer, PrimaryKeyConstraint, Table, VARCHAR, ForeignKeyConstraint, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 from typing import List, Optional
-from sqlalchemy import (
-    DateTime, ForeignKeyConstraint, Identity, Integer,
-    PrimaryKeyConstraint, VARCHAR, Table, String, Column, ForeignKey
-)
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import datetime
 
-
-
-class Base(DeclarativeBase):
+class Base(MappedAsDataclass, DeclarativeBase):
     pass
-
-
-class Caixa(Base):
-    __tablename__ = 'caixa'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    numero_caixa: Mapped[int] = mapped_column(Integer, unique=True)
-    data_criacao: Mapped[datetime.datetime] = mapped_column(DateTime)
-    data_eliminacao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
-
-    documento_id: Mapped[Optional[int]] = mapped_column(ForeignKey('documento.id'), nullable=True)
-    documento: Mapped[Optional["Documento"]] = relationship(back_populates='caixas')
-
-    unidade_id: Mapped[int] = mapped_column(ForeignKey('unidade.id'))
-    prateleira_id: Mapped[int] = mapped_column(ForeignKey('prateleira.id'))
-    unidade: Mapped["Unidade"] = relationship(back_populates='caixas')
-    prateleira: Mapped["Prateleira"] = relationship(back_populates='caixas')
-    movimentacoes: Mapped[List["Movimentacao"]] = relationship(back_populates='caixa')
 
 
 class Documento(Base):
     __tablename__ = 'documento'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    titulo: Mapped[str] = mapped_column(String(125))
-    tipo: Mapped[str] = mapped_column(String(50))
+    __table_args__ = (PrimaryKeyConstraint('id', name='documento_pk'),)
 
-    caixas: Mapped[List["Caixa"]] = relationship(back_populates='documento')
-    movimentacoes: Mapped[List["Movimentacao"]] = relationship(back_populates='documento')
+    titulo: Mapped[str] = mapped_column(VARCHAR(250))
+    tipo: Mapped[str] = mapped_column(VARCHAR(50))
 
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
 
-class Usuario(Base):
-    __tablename__ = 'usuario'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nome: Mapped[str] = mapped_column(String(125))
-    email: Mapped[str] = mapped_column(String(125), unique=True)
-    senha: Mapped[str] = mapped_column(String(255))
-    tipo: Mapped[str] = mapped_column(String(50))
-
-    movimentacoes: Mapped[List["Movimentacao"]] = relationship(back_populates="usuario")
-
-
-class Movimentacao(Base):
-    __tablename__ = 'movimentacao'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tipo: Mapped[str] = mapped_column(String(50))
-    data: Mapped[datetime.datetime] = mapped_column(DateTime)
-
-    caixa_id: Mapped[int] = mapped_column(ForeignKey('caixa.id'))
-    documento_id: Mapped[Optional[int]] = mapped_column(ForeignKey('documento.id'), nullable=True)
-    usuario_id: Mapped[int] = mapped_column(ForeignKey('usuario.id'))
-
-    usuario: Mapped["Usuario"] = relationship(back_populates="movimentacoes")
-    caixa: Mapped["Caixa"] = relationship(back_populates='movimentacoes')
-    documento: Mapped[Optional["Documento"]] = relationship(back_populates='movimentacoes')
-
-
-class Unidade(Base):
-    __tablename__ = 'unidade'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nome: Mapped[str] = mapped_column(String(100))
-    codigo: Mapped[int] = mapped_column(Integer, unique=True)
-    caixas: Mapped[List["Caixa"]] = relationship(back_populates='unidade')
+    caixas: Mapped[List['Caixa']] = relationship(
+        'Caixa',
+        secondary='caixa_documento',
+        back_populates='documentos',
+        default_factory=list
+    )
 
 
 class Prateleira(Base):
     __tablename__ = 'prateleira'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    setor: Mapped[str] = mapped_column(String(100))
-    corredor: Mapped[str] = mapped_column(String(10))
-    coluna: Mapped[int] = mapped_column(Integer)
-    nivel: Mapped[int] = mapped_column(Integer)
-    caixas: Mapped[List["Caixa"]] = relationship(back_populates='prateleira')
+    __table_args__ = (PrimaryKeyConstraint('id', name='prateleira_pk'),)
+
+    setor: Mapped[str] = mapped_column(VARCHAR(100))
+    corredor: Mapped[str] = mapped_column(VARCHAR(50))    # aceita 'A', '1', etc.
+    coluna: Mapped[str] = mapped_column(VARCHAR(50))
+    nivel: Mapped[str] = mapped_column(VARCHAR(50))
+
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+
+    caixas: Mapped[List['Caixa']] = relationship('Caixa', back_populates='prateleira', default_factory=list)
+
+
+class Unidade(Base):
+    __tablename__ = 'unidade'
+    __table_args__ = (PrimaryKeyConstraint('id', name='unidade_pk'),)
+
+    nome: Mapped[str] = mapped_column(VARCHAR(125))
+    codigo: Mapped[int] = mapped_column(Integer)
+
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+
+    caixas: Mapped[List['Caixa']] = relationship('Caixa', back_populates='unidade', default_factory=list)
+
+
+class Usuario(Base):
+    __tablename__ = 'usuario'
+    __table_args__ = (PrimaryKeyConstraint('id', name='usuario_pk'),)
+
+    nome: Mapped[str] = mapped_column(VARCHAR(125))
+    email: Mapped[str] = mapped_column(VARCHAR(125))
+    senha: Mapped[str] = mapped_column(VARCHAR(100))
+    tipo: Mapped[str] = mapped_column(VARCHAR(50))
+
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+
+    movimentacoes: Mapped[List['Movimentacao']] = relationship('Movimentacao', back_populates='usuario', default_factory=list)
+
+
+class Caixa(Base):
+    __tablename__ = 'caixa'
+    __table_args__ = (PrimaryKeyConstraint('id', name='caixa_pk'),)
+
+    # required (no default) fields first
+    numero_caixa: Mapped[int] = mapped_column(Integer)
+    data_criacao: Mapped[datetime.datetime] = mapped_column(DateTime)
+    unidade_id: Mapped[int] = mapped_column(Integer, ForeignKey('unidade.id'))
+    prateleira_id: Mapped[int] = mapped_column(Integer, ForeignKey('prateleira.id'))
+
+    # optional / defaults after
+    data_eliminacao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, default=None)
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+
+    prateleira: Mapped[Optional[Prateleira]] = relationship('Prateleira', back_populates='caixas', default=None)
+    unidade: Mapped[Optional[Unidade]] = relationship('Unidade', back_populates='caixas', default=None)
+    documentos: Mapped[List[Documento]] = relationship('Documento', secondary='caixa_documento', back_populates='caixas', default_factory=list)
+    movimentacoes: Mapped[List['Movimentacao']] = relationship('Movimentacao', back_populates='caixa', default_factory=list)
+
+
+t_caixa_documento = Table(
+    'caixa_documento', Base.metadata,
+    Column('caixa_id', Integer, nullable=False),
+    Column('documento_id', Integer, nullable=False),
+    ForeignKeyConstraint(['caixa_id'], ['caixa.id'], name='caixa_documento_fk'),
+    ForeignKeyConstraint(['documento_id'], ['documento.id'], name='caixa_documento_fkv2'),
+    PrimaryKeyConstraint('caixa_id', 'documento_id', name='caixa_documento_pk')
+)
+
+
+class Movimentacao(Base):
+    __tablename__ = 'movimentacao'
+    __table_args__ = (PrimaryKeyConstraint('id', name='movimentacao_pk'),)
+
+    tipo: Mapped[str] = mapped_column(VARCHAR(50))
+    data: Mapped[datetime.datetime] = mapped_column(DateTime)
+    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey('usuario.id'))
+    caixa_id: Mapped[int] = mapped_column(Integer, ForeignKey('caixa.id'))
+
+    id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+
+    usuario: Mapped[Optional[Usuario]] = relationship('Usuario', back_populates='movimentacoes', default=None)
+    caixa: Mapped[Optional[Caixa]] = relationship('Caixa', back_populates='movimentacoes', default=None)
