@@ -59,19 +59,24 @@ def menu_usuario():
         print("2. Buscar por ID")
         print("3. Buscar por E-mail")
         print("4. Cadastrar novo")
-        print("5. Voltar ao menu principal")
+        print("5. Alterar informações") # NOVA OPÇÃO
+        print("6. Voltar ao menu principal")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
             usuarios = repo_usuario.get_all()
             for u in usuarios:
-                print(f"ID: {u.id}, Nome: {u.nome}, E-mail: {u.email}, Tipo: {u.tipo}")
-
+                print(f"ID: {u.id}, Nome: {u.nome}, E-mail: {u.email}")
+        
         elif opcao == '2':
-            id_busca = int(input("Digite o ID do usuário: "))
+            try:
+                id_busca = int(input("Digite o ID do usuário: "))
+            except ValueError:
+                print("ID inválido.")
+                continue
             usuario = repo_usuario.get_by_id(id_busca)
             if usuario:
-                print(f"Encontrado: ID: {usuario.id}, Nome: {usuario.nome}")
+                print(f"Encontrado: ID {usuario.id}, Nome {usuario.nome}")
             else:
                 print("Usuário não encontrado.")
 
@@ -79,21 +84,60 @@ def menu_usuario():
             email_busca = input("Digite o e-mail do usuário: ")
             usuario = repo_usuario.get_by_email(email_busca)
             if usuario:
-                print(f"Encontrado: ID: {usuario.id}, Nome: {usuario.nome}")
+                print(f"Encontrado: ID {usuario.id}, Nome {usuario.nome}, E-mail {usuario.email}")
             else:
                 print("Usuário não encontrado.")
 
         elif opcao == '4':
-            nome = input("Nome: ")
+            nome = input("Nome do novo usuário: ")
             email = input("E-mail: ")
             senha = input("Senha: ")
-            tipo = input("Tipo (arquivista, comum): ")
+            tipo = input("Tipo (Ex: admin, normal): ")
             novo_usuario = Usuario(nome=nome, email=email, senha=senha, tipo=tipo)
             repo_usuario.add(novo_usuario)
-            print(f"Usuário '{nome}' cadastrado com sucesso!")
+            print("Usuário criado com sucesso!")
 
         elif opcao == '5':
+            alterar_usuario() # CHAMA A NOVA FUNÇÃO
+
+        elif opcao == '6':
             break
+
+def alterar_usuario():
+    """Função para alterar informações de um usuário existente."""
+    try:
+        id_alterar = int(input("Digite o ID do usuário que deseja alterar: "))
+    except ValueError:
+        print("ID inválido.")
+        return
+
+    usuario = repo_usuario.get_by_id(id_alterar)
+    if not usuario:
+        print("Usuário não encontrado.")
+        return
+
+    print(f"Alterando usuário: ID {usuario.id}, Nome {usuario.nome}")
+    
+    # Pergunta por novas informações, mantendo as antigas se o campo for deixado em branco
+    novo_nome = input(f"Novo nome (atual: {usuario.nome}): ")
+    if novo_nome:
+        usuario.nome = novo_nome
+
+    novo_email = input(f"Novo e-mail (atual: {usuario.email}): ")
+    if novo_email:
+        usuario.email = novo_email
+
+    nova_senha = input(f"Nova senha (atual: {usuario.senha}): ")
+    if nova_senha:
+        usuario.senha = nova_senha
+
+    novo_tipo = input(f"Novo tipo (atual: {usuario.tipo}): ")
+    if novo_tipo:
+        usuario.tipo = novo_tipo
+
+    # Salva as alterações no banco de dados
+    repo_usuario.update(usuario)
+    print("Informações do usuário alteradas com sucesso!")
 
 
 # ---------------- MENU CAIXA ----------------
@@ -580,7 +624,6 @@ def menu_unidade():
         elif opcao == '5':
             break
 
-# ---------------- MENU MOVIMENTAÇÃO ----------------
 # ---------------- MENU MOVIMENTAÇÃO ----------------
 def menu_movimentacao():
     while True:
