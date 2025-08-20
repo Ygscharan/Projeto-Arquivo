@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, PrimaryKeyConstraint, Table, VARCHAR, ForeignKeyConstraint, ForeignKey
+from sqlalchemy import Column,Date,DateTime, Integer, PrimaryKeyConstraint, Table, VARCHAR, ForeignKeyConstraint, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 from typing import List, Optional
 import datetime
@@ -13,8 +13,10 @@ class Documento(Base):
 
     titulo: Mapped[str] = mapped_column(VARCHAR(250))
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
+    data_emissao: Mapped[Optional[Date]] = mapped_column(Date, default=None)
 
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+    
 
     caixas: Mapped[List['Caixa']] = relationship(
         'Caixa',
@@ -23,6 +25,7 @@ class Documento(Base):
         default_factory=list
     )
 
+   
 
 class Prateleira(Base):
     __tablename__ = 'prateleira'
