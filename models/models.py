@@ -13,7 +13,7 @@ class Documento(Base):
 
     titulo: Mapped[str] = mapped_column(VARCHAR(250))
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
-    data_emissao: Mapped[datetime.date] = mapped_column(Date)
+    data_emissao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, default=None)
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
     
 
@@ -67,6 +67,10 @@ class Usuario(Base):
 
 
 class Caixa(Base):
+    def __lt__(self, other):
+        if not isinstance(other, Caixa):
+            return NotImplemented
+        return self.numero_caixa < other.numero_caixa
     __tablename__ = 'caixa'
     __table_args__ = (PrimaryKeyConstraint('id', name='caixa_pk'),)
 
