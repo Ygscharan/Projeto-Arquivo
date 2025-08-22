@@ -13,8 +13,7 @@ class Documento(Base):
 
     titulo: Mapped[str] = mapped_column(VARCHAR(250))
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
-    data_emissao: Mapped[Optional[Date]] = mapped_column(Date, default=None)
-
+    data_emissao: Mapped[datetime.date] = mapped_column(Date)
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
     
 

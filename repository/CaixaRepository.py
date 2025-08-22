@@ -1,6 +1,6 @@
 from database.db import session
 from models.models import Caixa
-
+from datetime import date
 class CaixaRepository:
     def __init__(self, session=session):
         self.session = session
@@ -16,6 +16,9 @@ class CaixaRepository:
 
     def get_by_unidade(self, unidade_id: int) -> list[Caixa]:
         return self.session.query(Caixa).filter(Caixa.unidade_id == unidade_id).all()
+    
+    def get_caixas_a_eliminar(self) -> list[Caixa]:
+        return self.session.query(Caixa).filter(Caixa.data_eliminacao > date.today()).all()
 
     def add(self, caixa: Caixa) -> None:
         self.session.add(caixa)

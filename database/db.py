@@ -1,7 +1,6 @@
 from urllib.parse import quote
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
-import oracledb
 from dotenv import load_dotenv
 import os
 

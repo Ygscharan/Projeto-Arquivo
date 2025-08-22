@@ -51,6 +51,8 @@ def criar_dados_iniciais():
     print("Dados iniciais prontos!")
 
 
+
+
 # ---------------- MENU USUÁRIO ----------------
 def menu_usuario():
     while True:
@@ -457,21 +459,11 @@ def menu_documento():
                 print(f"ID: {d.id}, Título: {d.titulo}, Tipo: {d.tipo}, Data Emissão: {de_str}")
 
         elif opcao == '2':
-            titulo = input("Título: ")
-            tipo = input("Tipo: ")
-            # opcional: pedir data de emissão
-            data_input = input("Data de emissão (enter para usar data atual / vazio para sem data) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
-            if data_input == "":
-                data_emissao = datetime.datetime.now()
-            else:
-                data_emissao = parse_data_flexivel(data_input)
-                if data_emissao is None:
-                    print("Formato de data inválido. Documento não criado.")
-                    continue
-            novo_doc = Documento(titulo=titulo, tipo=tipo)
-            # atribuir data_emissao somente se modelo/tabela suportarem
-            if hasattr(novo_doc, "data_emissao"):
-                novo_doc.data_emissao = data_emissao
+            titulo = input("Título: ").strip()
+            tipo = input("Tipo: ").strip()
+
+            # data_emissao sempre começa como None (INDETERMINADO)
+            novo_doc = Documento(titulo=titulo, tipo=tipo, data_emissao=None)
             repo_documento.add(novo_doc)
             print("Documento criado com sucesso!")
 
