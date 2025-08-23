@@ -32,8 +32,8 @@ class Prateleira(Base):
 
     setor: Mapped[str] = mapped_column(VARCHAR(100))
     corredor: Mapped[str] = mapped_column(VARCHAR(50))    # aceita 'A', '1', etc.
-    max_colunas: Mapped[int] = mapped_column(Integer, default=6)
-    max_niveis: Mapped[int] = mapped_column(Integer, default=5)
+    max_colunas: Mapped[str] = mapped_column(VARCHAR(50))
+    max_niveis: Mapped[str] = mapped_column(VARCHAR(50))
 
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
 
