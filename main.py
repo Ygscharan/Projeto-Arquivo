@@ -1,7 +1,7 @@
 import datetime
 
 from models.models import Usuario, Caixa, Documento, Prateleira, Unidade, Movimentacao
-from services.auth_service import initialize_firebase, login_with_email_password
+from services.auth_service import create_user_with_email_password, initialize_firebase, login_with_email_password
 import getpass
 import csv
 import os
@@ -63,7 +63,6 @@ def listar_todas_caixas():
     caixas = repo_caixa.get_all()
     print("\n--- Todas as Caixas ---")
     for c in caixas:
-        # Verifica se a caixa tem uma prateleira associada
         if c.prateleira:
             localizacao = f"Prateleira ID {c.prateleira.id} (Nível: {c.nivel}, Coluna: {c.coluna})"
         else:
@@ -147,9 +146,6 @@ def ranking_prateleiras():
         print(f"{idx}. Prateleira ID {p.id} ({p.setor}-{p.corredor}): {total_caixas} caixa(s)")
 
 def mostrar_prateleira(prateleira, prateleiras_mesmo_setor):
-    """
-    Exibe a prateleira em forma de tabela, no padrão solicitado.
-    """
 
     max_colunas = max(p.max_colunas for p in prateleiras_mesmo_setor)
     max_niveis = max(p.max_niveis for p in prateleiras_mesmo_setor)
@@ -195,15 +191,12 @@ def visualizar_prateleira_tabela(prateleira_id):
         print("Prateleira não encontrada.")
         return
 
-    # Mesmas prateleiras do mesmo setor/corredor
     todas = repo_prateleira.get_all()
     mesmas = [p for p in todas if p.setor == prateleira.setor and str(p.corredor) == str(prateleira.corredor)]
     
     try:
         niveis_existentes = set(int(p.max_niveis) for p in mesmas)
         colunas_existentes = set(int(p.max_colunas) for p in mesmas)
-        
-        # Define 6 colunas como padrão se não houver um valor específico
         max_cols = max(colunas_existentes) if colunas_existentes else 6
         max_nivs = max(niveis_existentes) if niveis_existentes else 1
 
@@ -213,9 +206,7 @@ def visualizar_prateleira_tabela(prateleira_id):
         
         for p in mesmas:
             for c in getattr(p, 'caixas', []):
-                # VERIFICAÇÃO ADICIONADA: Ignora caixas sem posição definida
                 if c.nivel is not None and c.coluna is not None:
-                    # Garante que a posição da caixa está dentro dos limites da tabela
                     nivel_caixa = int(c.nivel)
                     coluna_caixa = int(c.coluna)
                     if nivel_caixa in tabela and coluna_caixa in tabela[nivel_caixa]:
@@ -238,6 +229,48 @@ def visualizar_prateleira_tabela(prateleira_id):
         print("|" + "|".join(row) + "|")
         print(sep)
 
+def cadastrar_usuario():
+    print("\n--- Cadastro de Novo Usuário ---")
+    nome = input("Nome completo: ").strip()
+    
+
+    while True:
+        email = input("E-mail: ").strip()
+        try:
+            nome_usuario, dominio = email.split('@')
+            if nome_usuario and dominio:
+                break
+            else:
+                print("Erro: Formato de e-mail inválido. Deve haver texto antes e depois do '@'. Tente novamente.")
+        except ValueError:
+            print("Erro: Formato de e-mail inválido. O e-mail deve conter um '@'. Tente novamente.")
+
+    password = getpass.getpass("Senha: ")
+    tipo = input("Função do usuário (ex: admin, normal): ").strip()
+    
+    if not all([nome, password, tipo]):
+        print("Nome, senha e função são obrigatórios. Cadastro cancelado.")
+        return
+
+    create_user_with_email_password(nome, email, password, tipo)
+
+def login():
+    print("\n--- Autenticação ---")
+    while True:
+        email = input("E-mail (ou deixe em branco para cancelar): ").strip()
+        if not email:
+            print("Login cancelado.")
+            return None
+
+        password = getpass.getpass("Senha: ")
+        
+        usuario_logado = login_with_email_password(email, password)
+        
+        if usuario_logado:
+            return usuario_logado 
+        else:
+            print("Por favor, tente novamente.")
+
 
 
 # ---------------- MENU USUÁRIO ----------------
@@ -248,7 +281,7 @@ def menu_usuario():
         print("2. Buscar por ID")
         print("3. Buscar por E-mail")
         print("4. Cadastrar novo")
-        print("5. Alterar informações") # NOVA OPÇÃO
+        print("5. Alterar informações") 
         print("6. Voltar ao menu principal")
         opcao = input("Escolha uma opção: ")
 
@@ -293,7 +326,6 @@ def menu_usuario():
             break
 
 def alterar_usuario():
-    """Função para alterar informações de um usuário existente."""
     try:
         id_alterar = int(input("Digite o ID do usuário que deseja alterar: "))
     except ValueError:
@@ -306,8 +338,7 @@ def alterar_usuario():
         return
 
     print(f"Alterando usuário: ID {usuario.id}, Nome {usuario.nome}")
-    
-    # Pergunta por novas informações, mantendo as antigas se o campo for deixado em branco
+
     novo_nome = input(f"Novo nome (atual: {usuario.nome}): ")
     if novo_nome:
         usuario.nome = novo_nome
@@ -328,11 +359,7 @@ def alterar_usuario():
     print("Informações do usuário alteradas com sucesso!")
 
 def importar_caixas_csv():
-    """
-    Função para importar caixas em massa a partir de um arquivo CSV.
-    Formato esperado do CSV com cabeçalho: numero_caixa,data_eliminacao,unidade_codigo,documentos_titulos
-    """
-    BATCH_SIZE = 100  # Processa e salva 100 caixas por vez
+    BATCH_SIZE = 100  
 
     csv_dir = "CSV"
     if not os.path.isdir(csv_dir):
@@ -361,22 +388,20 @@ def importar_caixas_csv():
         return
 
     try:
-        # Contar linhas para a barra de progresso
         with open(caminho_arquivo, mode='r', encoding='utf-8') as f:
-            total_rows = sum(1 for row in f) - 1  # Desconta o cabeçalho
+            total_rows = sum(1 for row in f) - 1  
 
         with open(caminho_arquivo, mode='r', encoding='utf-8') as file:
-            # Usar DictReader para facilitar o acesso às colunas pelo nome
             reader = csv.DictReader(file)
             
             print("Iniciando importação...")
             sucesso = 0
             falha = 0
 
-            # Usar tqdm para a barra de progresso
+
             for row_num, row in enumerate(tqdm(reader, total=total_rows, desc="Importando Caixas"), start=1):
                 try:
-                    # Valida e converte os dados
+
                     numero_caixa = int(row['numero_caixa'])
                     
                     data_eliminacao_str = row.get('data_eliminacao', '').strip()
@@ -387,7 +412,6 @@ def importar_caixas_csv():
                     if not unidade:
                         raise ValueError(f"Unidade com código '{unidade_codigo_str}' não encontrada.")
 
-                    # Processa os documentos (encontra ou cria)
                     docs_associados = []
                     documentos_titulos_str = row.get('documentos_titulos', '').strip()
                     if documentos_titulos_str:
@@ -396,13 +420,12 @@ def importar_caixas_csv():
                             if not titulo: continue
                             doc = repo_documento.get_by_titulo(titulo)
                             if not doc:
-                                # Se o documento não existe, cria um novo com tipo padrão
+
                                 tqdm.write(f"  -> Documento '{titulo}' não encontrado, criando um novo.")
                                 doc = Documento(titulo=titulo, tipo="Importado via CSV", data_emissao=datetime.now())
                                 repo_documento.session.add(doc)
                             docs_associados.append(doc)
 
-                    # Cria e salva a nova caixa
                     nova_caixa = Caixa(
                         numero_caixa=numero_caixa,
                         data_criacao=datetime.now(),
@@ -413,7 +436,6 @@ def importar_caixas_csv():
                     repo_caixa.session.add(nova_caixa)
                     sucesso += 1
 
-                    # A cada BATCH_SIZE, faz o commit no banco de dados
                     if row_num % BATCH_SIZE == 0:
                         repo_caixa.session.commit()
 
@@ -422,7 +444,6 @@ def importar_caixas_csv():
                     tqdm.write(f"Erro na linha {row_num + 1}: {e}. Verifique o formato do CSV. Caixa não importada.")
                     falha += 1
             
-            # Faz o commit final para as caixas restantes que não completaram um lote
             repo_caixa.session.commit()
             print(f"\nImportação concluída! {sucesso} caixas criadas, {falha} falhas.")
 
@@ -627,7 +648,6 @@ def menu_caixa():
                 print(f"Caixa {numero} criada como avulsa (sem prateleira)!")
 
         elif opcao == '4':
-            ## CÓDIGO ADICIONADO AQUI
             caixas_disponiveis = repo_caixa.get_all()
             if not caixas_disponiveis:
                 print("Nenhuma caixa cadastrada.")
@@ -1253,21 +1273,14 @@ def menu_consultas():
         else:
             print("Opção inválida, tente novamente.")
 
-def login():
-    print("\n--- Autenticação ---")
-    email = input("E-mail: ")
-    password = getpass.getpass("Senha: ")
-    usuario_logado = login_with_email_password(email, password)
-    
-    return usuario_logado
-
-
+# ---------------- MENU PRINCIPAL ----------------
 def menu_principal():
     usuario_atual = None
-    
+
     while True:
         if usuario_atual:
             print("\n===== MENU PRINCIPAL =====")
+            print(f"Usuário: {usuario_atual.display_name}")
             print("1. Usuários")
             print("2. Caixas")
             print("3. Documentos")
@@ -1299,13 +1312,16 @@ def menu_principal():
             elif opcao == '9':
                 break
         else:
-            print("\n===== MENU PRINCIPAL =====")
+            print("\n===== BEM-VINDO AO SISTEMA DE ARQUIVO =====")
             print("1. Fazer Login")
-            print("2. Sair")
+            print("2. Cadastrar Novo Usuário") 
+            print("3. Sair")                   
             opcao = input("Escolha: ")
             if opcao == '1':
                 usuario_atual = login()
             elif opcao == '2':
+                cadastrar_usuario() 
+            elif opcao == '3':
                 break
 
 def main():

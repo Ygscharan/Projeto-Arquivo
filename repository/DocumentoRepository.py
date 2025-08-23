@@ -10,7 +10,7 @@ class DocumentoRepository:
         return self.session.query(Documento).filter(Documento.id == documento_id).first()
 
     def get_all(self) -> list[Documento]:
-        return self.session.query(Documento).all()
+        return self.session.query(Documento).order_by(Documento.titulo).all()
 
     def get_by_tipo(self, tipo: str) -> list[Documento]:
         return self.session.query(Documento).filter(Documento.tipo == tipo).all()

@@ -9,7 +9,7 @@ class CaixaRepository:
         return self.session.query(Caixa).filter(Caixa.id == caixa_id).first()
 
     def get_all(self) -> list[Caixa]:
-        return self.session.query(Caixa).all()
+        return self.session.query(Caixa).order_by(Caixa.numero_caixa).all()
 
     def get_by_prateleira(self, prateleira_id: int) -> list[Caixa]:
         return self.session.query(Caixa).filter(Caixa.prateleira_id == prateleira_id).all()

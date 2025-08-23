@@ -1,6 +1,8 @@
 from database.db import session
 from models.models import Movimentacao
-
+from sqlalchemy import desc
+from database.db import session
+from models.models import Movimentacao
 
 class MovimentacaoRepository:
     def __init__(self, session=session):
@@ -10,7 +12,7 @@ class MovimentacaoRepository:
         return self.session.query(Movimentacao).filter(Movimentacao.id == movimentacao_id).first()
 
     def get_all(self) -> list[Movimentacao]:
-        return self.session.query(Movimentacao).all()
+        return self.session.query(Movimentacao).order_by(desc(Movimentacao.tipo)).all()
 
     def get_by_caixa(self, caixa_id: int) -> list[Movimentacao]:
         return self.session.query(Movimentacao).filter(Movimentacao.caixa_id == caixa_id).all()

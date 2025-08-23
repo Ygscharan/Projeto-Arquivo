@@ -9,7 +9,7 @@ class PrateleiraRepository():
         return self.session.query(Prateleira).filter(Prateleira.id == prateleira_id).first()
 
     def get_all(self) -> list[Prateleira]:
-        return self.session.query(Prateleira).all()
+        return self.session.query(Prateleira).order_by(Prateleira.setor, Prateleira.corredor).all()
 
     def get_by_setor(self, setor: str) -> list[Prateleira]:
         return self.session.query(Prateleira).filter(Prateleira.setor == setor).all()

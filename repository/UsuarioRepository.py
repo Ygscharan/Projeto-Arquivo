@@ -9,7 +9,7 @@ class UsuarioRepository:
         return self.session.query(Usuario).filter(Usuario.id == usuario_id).first()
 
     def get_all(self) -> list[Usuario]:
-        return self.session.query(Usuario).all()
+        return self.session.query(Usuario).order_by(Usuario.nome).all()
 
     def get_by_nome(self, nome: str) -> list[Usuario]:
         return self.session.query(Usuario).filter(Usuario.nome.ilike(f"%{nome}%")).all()

@@ -9,7 +9,7 @@ class UnidadeRepository:
         return self.session.query(Unidade).filter(Unidade.id == unidade_id).first()
 
     def get_all(self) -> list[Unidade]:
-        return self.session.query(Unidade).all()
+        return self.session.query(Unidade).order_by(Unidade.nome).all()
 
     def get_by_nome(self, nome: str) -> list[Unidade]:
         return self.session.query(Unidade).filter(Unidade.nome.ilike(f"%{nome}%")).all()
