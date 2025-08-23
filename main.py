@@ -788,67 +788,53 @@ def menu_caixa():
             print("Alterações salvas com sucesso.")
 
         elif opcao == '5':
-            caixas_avulsas = [c for c in repo_caixa.get_all() if getattr(c, 'prateleira', None) is None and (getattr(c, 'prateleira_id', None) is None or getattr(c, 'prateleira_id', 0) == 0)]
-            if not caixas_avulsas:
-                print("Nenhuma caixa avulsa encontrada.")
-                return
-            print(f"Foram encontradas {len(caixas_avulsas)} caixas avulsas.")
+            caixas_avulsas = [c for c in repo_caixa.get_all() if getattr(c, 'prateleira_id', None) is None]
+            if not caixas_avulsas: print("Nenhuma caixa avulsa encontrada."); continue
             
+            print(f"\nForam encontradas {len(caixas_avulsas)} caixas avulsas.")
             prateleiras = repo_prateleira.get_all()
-            setores = sorted(set(p.setor for p in prateleiras))
-            if not setores:
-                print("Nenhum setor cadastrado.")
-                return
-            print("Setores disponíveis:")
-            for idx, setor in enumerate(setores, 1):
-                print(f"{idx}. {setor}")
-            while True:
-                try:
-                    setor_idx = int(input("Escolha o número do setor para mover as caixas: "))
-                    if 1 <= setor_idx <= len(setores):
-                        setor_escolhido = setores[setor_idx-1]
-                        break
-                    else:
-                        print("Número inválido.")
-                except ValueError:
-                    print("Digite um número válido.")
-            
-            prateleiras_validas = []
-            prateleiras_invalidas = []
-            for p in prateleiras:
-                if p.setor == setor_escolhido:
-                    try:
-                        _ = int(p.corredor)
-                        _ = int(p.max_colunas)
-                        _ = int(p.max_niveis)
-                        prateleiras_validas.append(p)
-                    except (ValueError, TypeError):
-                        prateleiras_invalidas.append(p)
-            if prateleiras_invalidas:
-                print(f"Atenção: {len(prateleiras_invalidas)} prateleira(s) ignorada(s) por conterem valores não numéricos em corredor, coluna ou nível.")
-            prateleiras_setor = sorted(prateleiras_validas, key=lambda p: (int(p.corredor), int(p.max_colunas), int(p.max_niveis)))
-            if not prateleiras_setor:
-                print("Nenhuma prateleira válida encontrada para o setor escolhido.")
-                return
+            if not prateleiras: print("Nenhuma prateleira cadastrada para mover as caixas."); continue
+
+            print("\nPrateleiras disponíveis:")
+            for p in prateleiras: print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor}")
+
+            try:
+                prateleira_id = int(input("Digite o ID da prateleira de destino: "))
+                prateleira_destino = repo_prateleira.get_by_id(prateleira_id)
+                if not prateleira_destino: print("ID de prateleira inválido."); continue
+            except ValueError: print("Entrada inválida. Digite um número."); continue
+
+            caixas_na_prateleira = repo_caixa.get_by_prateleira(prateleira_destino.id)
+            posicoes_ocupadas = set((int(c.coluna), int(c.nivel)) for c in caixas_na_prateleira if c.coluna is not None and c.nivel is not None)
+            max_col, max_niv = int(prateleira_destino.max_colunas), int(prateleira_destino.max_niveis)
+            caixas_alocadas = 0
+
             for caixa in caixas_avulsas:
-                alocada = False
-                for p in prateleiras_setor:
-                    
-                    ocupada = False
-                    for c in getattr(p, 'caixas', []):
-                        if getattr(c, 'nivel', p.max_niveis) == p.max_niveis and getattr(c, 'coluna', p.max_colunas) == p.max_colunas:
-                            ocupada = True
+                slot_encontrado = False
+                for nivel_atual in range(1, max_niv + 1):
+                    for coluna_atual in range(1, max_col + 1):
+                        if (coluna_atual, nivel_atual) not in posicoes_ocupadas:
+                            caixa.prateleira = prateleira_destino
+                            caixa.coluna = str(coluna_atual)
+                            caixa.nivel = str(nivel_atual)
+                            repo_caixa.update(caixa)
+                            posicoes_ocupadas.add((coluna_atual, nivel_atual))
+                            
+                            print(f"Caixa {caixa.numero_caixa} movida para Prateleira ID {prateleira_destino.id} (Coluna: {coluna_atual}, Nível: {nivel_atual})")
+                            slot_encontrado = True
+                            caixas_alocadas += 1
                             break
-                    if not ocupada:
-                        caixa.prateleira = p
-                        caixa.nivel = p.max_niveis
-                        caixa.coluna = p.max_colunas
-                        repo_caixa.update(caixa)
-                        print(f"Caixa {caixa.numero_caixa} movida para Prateleira ID {p.id} (Setor: {p.setor}, Corredor: {p.corredor}, Coluna: {p.max_colunas}, Nível: {p.max_niveis})")
-                        alocada = True
-                        break
-                if not alocada:
-                    print(f"Não há espaço disponível para a caixa {caixa.numero_caixa} no setor '{setor_escolhido}'.")
+                    if slot_encontrado: break
+                
+                if not slot_encontrado:
+                    print(f"\nNão há mais espaço na prateleira de destino.")
+                    break
+            
+            if caixas_alocadas > 0:
+                print(f"Operação concluída. Total de {caixas_alocadas} caixas movidas.")
+            else:
+                print("Nenhuma caixa foi movida. A prateleira pode estar cheia.")
+
 
         elif opcao == '6':
             caixas_disponiveis = repo_caixa.get_all()
@@ -899,10 +885,9 @@ def menu_documento():
         elif opcao == '2':
             titulo = input("Título: ").strip()
             tipo = input("Tipo: ").strip()
-
-            # data_emissao sempre começa como None (INDETERMINADO)
             novo_doc = Documento(titulo=titulo, tipo=tipo, data_emissao=None)
             data_input = input("Data de emissão (enter para usar data atual / vazio para sem data) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
+
             if data_input == "":
                 data_emissao = datetime.now()
             else:
@@ -918,7 +903,6 @@ def menu_documento():
             print("Documento criado com sucesso!")
 
         elif opcao == '3':
-            ## CÓDIGO ADICIONADO AQUI
             documentos_disponiveis = repo_documento.get_all()
             if not documentos_disponiveis:
                 print("Nenhum documento cadastrado.")
@@ -957,7 +941,7 @@ def menu_documento():
             elif opt == '3':
                 di = input("Nova data de emissão (enter para remover / vazio cancela) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
                 if di == "":
-                    # remover data
+
                     if hasattr(doc, "data_emissao"):
                         doc.data_emissao = None
                 else:
@@ -1018,7 +1002,7 @@ def menu_prateleira():
             prateleiras_existentes = repo_prateleira.get_all()
             setores_existentes = sorted(set(p.setor for p in prateleiras_existentes))
             
-            setor = None # Inicializa a variável setor
+            setor = None 
 
             if setores_existentes:
                 print("Setores já cadastrados:")
@@ -1159,8 +1143,8 @@ def menu_movimentacao():
                 print("Movimentação não encontrada.")
 
         elif opcao == '3':
-            # 1. Obter e listar usuários disponíveis
             usuarios_disp = repo_usuario.get_all()
+
             if not usuarios_disp:
                 print("Erro: Nenhum usuário cadastrado para associar à movimentação. Crie um usuário primeiro.")
                 continue
@@ -1180,7 +1164,6 @@ def menu_movimentacao():
                 print("Usuário não encontrado. Tente novamente.")
                 continue
 
-            # 2. Obter e listar caixas disponíveis
             caixas_disp = repo_caixa.get_all()
             if not caixas_disp:
                 print("Erro: Nenhuma caixa cadastrada para associar à movimentação. Crie uma caixa primeiro.")
@@ -1201,7 +1184,6 @@ def menu_movimentacao():
                 print("Caixa não encontrada. Tente novamente.")
                 continue
 
-            # 3. Criar a nova movimentação com os IDs válidos
             tipo = input("Tipo da movimentação: ")
             data = datetime.datetime.now()
 
