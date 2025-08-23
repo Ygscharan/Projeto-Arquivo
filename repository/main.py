@@ -1,7 +1,9 @@
-from datetime import datetime
+import datetime
 from models.models import Usuario, Caixa, Documento, Prateleira, Unidade, Movimentacao
+
 from services.auth_service import initialize_firebase, login_with_email_password
 import getpass
+
 from repository.CaixaRepository import CaixaRepository
 from repository.DocumentoRepository import DocumentoRepository
 from repository.MovimentacaoRepository import MovimentacaoRepository
@@ -9,7 +11,7 @@ from repository.PrateleiraRepository import PrateleiraRepository
 from repository.UnidadeRepository import UnidadeRepository
 from repository.UsuarioRepository import UsuarioRepository
 
-
+from datetime import datetime
 
 repo_usuario = UsuarioRepository()
 repo_caixa = CaixaRepository()
@@ -27,7 +29,7 @@ def parse_data_flexivel(data_str):
     ]
     for fmt in formatos_para_tentar:
         try:
-             return datetime.datetime.strptime(data_str, fmt)
+            return datetime.datetime.strptime(data_str, fmt)
         except ValueError:
             continue
     return None
@@ -45,10 +47,9 @@ def criar_dados_iniciais():
     prateleiras = repo_prateleira.get_all()
     if not prateleiras:
         print("Criando Prateleira padrão...")
-        prateleira_padrao = Prateleira(setor="Arquivo Morto", corredor="1", max_colunas=6, max_niveis=5)
+        prateleira_padrao = Prateleira(setor="Arquivo Morto", corredor=1, coluna=1, nivel=1)
         repo_prateleira.add(prateleira_padrao)
     print("Dados iniciais prontos!")
-
 
 def listar_todas_prateleiras():
     prateleiras = repo_prateleira.get_all()
@@ -57,17 +58,8 @@ def listar_todas_prateleiras():
 
 def listar_todas_caixas():
     caixas = repo_caixa.get_all()
-    print("\n--- Todas as Caixas ---")
     for c in caixas:
-        # Verifica se a caixa tem uma prateleira associada
-        if c.prateleira:
-            localizacao = f"Prateleira ID {c.prateleira.id} (Nível: {c.nivel}, Coluna: {c.coluna})"
-        else:
-            localizacao = "Sem prateleira (Avulsa)"
-        
-        data_elim = c.data_eliminacao.strftime('%d/%m/%Y') if c.data_eliminacao else "Permanente"
-        
-        print(f"Número: {c.numero_caixa}, Localização: {localizacao}, Data Eliminação: {data_elim}")
+        print(f"Número: {c.numero_caixa}, Prateleira: {c.prateleira_id}, Nível: {c.nivel}, Coluna: {c.coluna}, Data Eliminação: {c.data_eliminacao}")
 
 def buscar_prateleira_por_id():
     id_busca = int(input("Digite o ID da prateleira: "))
@@ -92,17 +84,12 @@ def listar_caixas_de_prateleira():
     if not prateleira:
         print("Prateleira não encontrada.")
         return
-        
     caixas = getattr(prateleira, 'caixas', [])
-    print(f"\n--- Caixas na Prateleira ID {id_prateleira} ---")
     if caixas:
         for c in caixas:
-
-            localizacao = f"Nível: {c.nivel}, Coluna: {c.coluna}"
-            data_elim = c.data_eliminacao.strftime('%d/%m/%Y') if c.data_eliminacao else "Permanente"
-            print(f"Número: {c.numero_caixa}, {localizacao}, Data Eliminação: {data_elim}")
+            print(f"Número: {c.numero_caixa}, Nível: {c.nivel}, Coluna: {c.coluna}, Data Eliminação: {c.data_eliminacao}")
     else:
-        print("Esta prateleira não possui caixas.")
+        print("Prateleira não possui caixas.")
 
 def contar_caixas_por_prateleira():
     prateleiras = repo_prateleira.get_all()
@@ -113,7 +100,7 @@ def contar_caixas_por_prateleira():
 def caixas_vencidas():
     hoje = datetime.today().date()
     caixas = repo_caixa.get_all()
-    vencidas = [c for c in caixas if c.data_eliminacao and c.data_eliminacao.date() < hoje]
+    vencidas = [c for c in caixas if c.data_eliminacao and c.data_eliminacao < hoje]
     if vencidas:
         for c in vencidas:
             print(f"Número: {c.numero_caixa}, Prateleira: {c.prateleira_id}, Data Eliminação: {c.data_eliminacao}")
@@ -146,12 +133,13 @@ def mostrar_prateleira(prateleira, prateleiras_mesmo_setor):
     Exibe a prateleira em forma de tabela, no padrão solicitado.
     """
 
-    max_colunas = max(p.max_colunas for p in prateleiras_mesmo_setor)
-    max_niveis = max(p.max_niveis for p in prateleiras_mesmo_setor)
+    
+    max_colunas = max(int(p.coluna) for p in prateleiras_mesmo_setor)
+    max_niveis = max(int(p.nivel) for p in prateleiras_mesmo_setor)
 
     
     caixas = {}
-    for p in prateleiras_mesmo_setor:        
+    for p in prateleiras_mesmo_setor:
         for caixa in getattr(p, 'caixas', []):
             try:
                 nivel = int(getattr(caixa, 'nivel', p.nivel))
@@ -226,24 +214,19 @@ def menu_usuario():
         print("2. Buscar por ID")
         print("3. Buscar por E-mail")
         print("4. Cadastrar novo")
-        print("5. Alterar informações") # NOVA OPÇÃO
-        print("6. Voltar ao menu principal")
+        print("5. Voltar ao menu principal")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
             usuarios = repo_usuario.get_all()
             for u in usuarios:
                 print(f"ID: {u.id}, Nome: {u.nome}, E-mail: {u.email}, Tipo: {u.tipo}")
-        
+
         elif opcao == '2':
-            try:
-                id_busca = int(input("Digite o ID do usuário: "))
-            except ValueError:
-                print("ID inválido.")
-                continue
+            id_busca = int(input("Digite o ID do usuário: "))
             usuario = repo_usuario.get_by_id(id_busca)
             if usuario:
-                print(f"Encontrado: ID {usuario.id}, Nome {usuario.nome}")
+                print(f"Encontrado: ID: {usuario.id}, Nome: {usuario.nome}")
             else:
                 print("Usuário não encontrado.")
 
@@ -251,60 +234,21 @@ def menu_usuario():
             email_busca = input("Digite o e-mail do usuário: ")
             usuario = repo_usuario.get_by_email(email_busca)
             if usuario:
-                print(f"Encontrado: ID {usuario.id}, Nome {usuario.nome}, E-mail {usuario.email}")
+                print(f"Encontrado: ID: {usuario.id}, Nome: {usuario.nome}")
             else:
                 print("Usuário não encontrado.")
 
         elif opcao == '4':
-            nome = input("Nome do novo usuário: ")
+            nome = input("Nome: ")
             email = input("E-mail: ")
             senha = input("Senha: ")
-            tipo = input("Tipo (Ex: admin, normal): ")
+            tipo = input("Tipo (arquivista, comum): ")
             novo_usuario = Usuario(nome=nome, email=email, senha=senha, tipo=tipo)
             repo_usuario.add(novo_usuario)
-            print("Usuário criado com sucesso!")
+            print(f"Usuário '{nome}' cadastrado com sucesso!")
 
         elif opcao == '5':
-            alterar_usuario() 
-
-        elif opcao == '6':
             break
-
-def alterar_usuario():
-    """Função para alterar informações de um usuário existente."""
-    try:
-        id_alterar = int(input("Digite o ID do usuário que deseja alterar: "))
-    except ValueError:
-        print("ID inválido.")
-        return
-
-    usuario = repo_usuario.get_by_id(id_alterar)
-    if not usuario:
-        print("Usuário não encontrado.")
-        return
-
-    print(f"Alterando usuário: ID {usuario.id}, Nome {usuario.nome}")
-    
-    # Pergunta por novas informações, mantendo as antigas se o campo for deixado em branco
-    novo_nome = input(f"Novo nome (atual: {usuario.nome}): ")
-    if novo_nome:
-        usuario.nome = novo_nome
-
-    novo_email = input(f"Novo e-mail (atual: {usuario.email}): ")
-    if novo_email:
-        usuario.email = novo_email
-
-    nova_senha = input(f"Nova senha (atual: {usuario.senha}): ")
-    if nova_senha:
-        usuario.senha = nova_senha
-
-    novo_tipo = input(f"Novo tipo (atual: {usuario.tipo}): ")
-    if novo_tipo:
-        usuario.tipo = novo_tipo
-
-    # Salva as alterações no banco de dados
-    repo_usuario.update(usuario)
-    print("Informações do usuário alteradas com sucesso!")
 
 
 # ---------------- MENU CAIXA ----------------
@@ -363,7 +307,7 @@ def menu_caixa():
 
                 pr = getattr(caixa, "prateleira", None)
                 if pr:
-                    prateleira_str = f"{pr.setor} - Corredor:{pr.corredor} Coluna:{caixa.coluna} Nível:{caixa.nivel}"
+                    prateleira_str = f"{pr.setor} - Corredor:{pr.corredor} Coluna:{pr.coluna} Nível:{pr.nivel}"
                 else:
                     prateleira_str = f"ID:{getattr(caixa, 'prateleira_id', 'None')}"
 
@@ -409,7 +353,7 @@ def menu_caixa():
 
             print("\nPrateleiras disponíveis:")
             for p in prateleiras:
-                print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Max Colunas: {p.max_colunas} - Max Níveis: {p.max_niveis}")
+                print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Coluna: {p.coluna} - Nível: {p.nivel}")
             pr_input = input("ID da prateleira para associar (enter para usar a primeira): ").strip()
             if pr_input == "":
                 prateleira = prateleiras[0]
@@ -451,7 +395,7 @@ def menu_caixa():
 
             nova_caixa = Caixa(
                 numero_caixa=numero,
-                data_criacao=datetime.now(),
+                data_criacao=datetime.datetime.now(),
                 data_eliminacao=data_elim
             )
             nova_caixa.unidade = unidade
@@ -461,12 +405,12 @@ def menu_caixa():
                 nova_caixa.documentos = selected_docs
             repo_caixa.add(nova_caixa)
             if prateleira:
-                print(f"Caixa {numero} criada e inserida na prateleira '{prateleira.setor}' (Nível: {nova_caixa.nivel}) (Coluna: {nova_caixa.coluna})!")
+                print(f"Caixa {numero} criada e inserida na prateleira '{prateleira.setor}' (Nível: {prateleira.nivel})!")
             else:
                 print(f"Caixa {numero} criada como avulsa (sem prateleira)!")
 
         elif opcao == '4':
-            ## CÓDIGO ADICIONADO AQUI
+            
             caixas_disponiveis = repo_caixa.get_all()
             if not caixas_disponiveis:
                 print("Nenhuma caixa cadastrada.")
@@ -528,7 +472,7 @@ def menu_caixa():
                 prateleiras = repo_prateleira.get_all()
                 print("\nPrateleiras disponíveis:")
                 for p in prateleiras:
-                    print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Max Colunas: {p.max_colunas} - Max Níveis: {p.max_niveis}")
+                    print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Coluna: {p.coluna} - Nível: {p.nivel}")
                 pid_in = input("ID da nova prateleira (enter para cancelar): ").strip()
                 if pid_in == "":
                     print("Operação cancelada.")
@@ -603,11 +547,12 @@ def menu_caixa():
                 print("Edição cancelada.")
                 continue
 
-            # salvar alterações
+            
             repo_caixa.update(caixa)
             print("Alterações salvas com sucesso.")
 
         elif opcao == '5':
+            
             caixas_avulsas = [c for c in repo_caixa.get_all() if getattr(c, 'prateleira', None) is None and (getattr(c, 'prateleira_id', None) is None or getattr(c, 'prateleira_id', 0) == 0)]
             if not caixas_avulsas:
                 print("Nenhuma caixa avulsa encontrada.")
@@ -639,14 +584,14 @@ def menu_caixa():
                 if p.setor == setor_escolhido:
                     try:
                         _ = int(p.corredor)
-                        _ = int(p.max_colunas)
-                        _ = int(p.max_niveis)
+                        _ = int(p.coluna)
+                        _ = int(p.nivel)
                         prateleiras_validas.append(p)
                     except (ValueError, TypeError):
                         prateleiras_invalidas.append(p)
             if prateleiras_invalidas:
                 print(f"Atenção: {len(prateleiras_invalidas)} prateleira(s) ignorada(s) por conterem valores não numéricos em corredor, coluna ou nível.")
-            prateleiras_setor = sorted(prateleiras_validas, key=lambda p: (int(p.corredor), int(p.max_colunas), int(p.max_niveis)))
+            prateleiras_setor = sorted(prateleiras_validas, key=lambda p: (int(p.corredor), int(p.coluna), int(p.nivel)))
             if not prateleiras_setor:
                 print("Nenhuma prateleira válida encontrada para o setor escolhido.")
                 return
@@ -656,15 +601,15 @@ def menu_caixa():
                     
                     ocupada = False
                     for c in getattr(p, 'caixas', []):
-                        if getattr(c, 'nivel', p.max_niveis) == p.max_niveis and getattr(c, 'coluna', p.max_colunas) == p.max_colunas:
+                        if getattr(c, 'nivel', p.nivel) == p.nivel and getattr(c, 'coluna', p.coluna) == p.coluna:
                             ocupada = True
                             break
                     if not ocupada:
                         caixa.prateleira = p
-                        caixa.nivel = p.max_niveis
-                        caixa.coluna = p.max_colunas
+                        caixa.nivel = p.nivel
+                        caixa.coluna = p.coluna
                         repo_caixa.update(caixa)
-                        print(f"Caixa {caixa.numero_caixa} movida para Prateleira ID {p.id} (Setor: {p.setor}, Corredor: {p.corredor}, Coluna: {p.max_colunas}, Nível: {p.max_niveis})")
+                        print(f"Caixa {caixa.numero_caixa} movida para Prateleira ID {p.id} (Setor: {p.setor}, Corredor: {p.corredor}, Coluna: {p.coluna}, Nível: {p.nivel})")
                         alocada = True
                         break
                 if not alocada:
@@ -692,20 +637,18 @@ def menu_documento():
                 print(f"ID: {d.id}, Título: {d.titulo}, Tipo: {d.tipo}, Data Emissão: {de_str}")
 
         elif opcao == '2':
-            titulo = input("Título: ").strip()
-            tipo = input("Tipo: ").strip()
-
-            # data_emissao sempre começa como None (INDETERMINADO)
-            novo_doc = Documento(titulo=titulo, tipo=tipo, data_emissao=None)
+            titulo = input("Título: ")
+            tipo = input("Tipo: ")
+            
             data_input = input("Data de emissão (enter para usar data atual / vazio para sem data) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
             if data_input == "":
-                data_emissao = datetime.now()
+                data_emissao = datetime.datetime.now()
             else:
                 data_emissao = parse_data_flexivel(data_input)
                 if data_emissao is None:
                     print("Formato de data inválido. Documento não criado.")
                     continue
-            novo_doc = Documento(titulo=titulo, tipo=tipo, data_emissao=None)
+            novo_doc = Documento(titulo=titulo, tipo=tipo)
             
             if hasattr(novo_doc, "data_emissao"):
                 novo_doc.data_emissao = data_emissao
@@ -713,7 +656,7 @@ def menu_documento():
             print("Documento criado com sucesso!")
 
         elif opcao == '3':
-            ## CÓDIGO ADICIONADO AQUI
+            
             documentos_disponiveis = repo_documento.get_all()
             if not documentos_disponiveis:
                 print("Nenhum documento cadastrado.")
@@ -752,7 +695,7 @@ def menu_documento():
             elif opt == '3':
                 di = input("Nova data de emissão (enter para remover / vazio cancela) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
                 if di == "":
-                    # remover data
+                    
                     if hasattr(doc, "data_emissao"):
                         doc.data_emissao = None
                 else:
@@ -782,7 +725,7 @@ def menu_documento():
             break
 
 # ---------------- MENU PRATELEIRA ----------------
-def menu_prateleira():
+def menu_prateleira(): 
     while True:
         print("\n--- Menu Prateleira ---")
         print("1. Listar todas")
@@ -796,7 +739,7 @@ def menu_prateleira():
         if opcao == '1':
             prateleiras = repo_prateleira.get_all()
             for p in prateleiras:
-                print(f"ID: {p.id}, Setor: {p.setor}, Corredor: {p.corredor}, Dimensões: {p.max_colunas} colunas x {p.max_niveis} níveis")
+                print(f"ID: {p.id}, Setor: {p.setor}, Corredor: {p.corredor}, Colunas: {p.coluna}, Níveis: {p.nivel}")
 
         elif opcao == '2':
             id_busca = int(input("Digite o ID da prateleira: "))
@@ -826,24 +769,17 @@ def menu_prateleira():
                         else:
                             print("Número inválido.")
                     except ValueError:
-                        setor = input("Digite o nome do novo setor: ").strip()
-                        corredor = input("Corredor: ")
-                        max_colunas = int(input("Quantas colunas: "))
-                        max_niveis = int(input("Quantos níveis: "))
-            nova_prateleira = Prateleira(
-                setor=setor,
-                corredor=corredor,
-                max_colunas=max_colunas,
-                max_niveis=max_niveis
-            )
+                        print("Digite um número válido.")
+            else:
+                setor = input("Digite o nome do novo setor: ").strip()
+            corredor = input("Corredor: ")
+            coluna = int(input("Quantas colunas: "))
+            nivel = int(input("Quantos níveis: "))
+            nova_prateleira = Prateleira(setor=setor, corredor=corredor, coluna=coluna, nivel=nivel)
             repo_prateleira.add(nova_prateleira)
             print(f"Prateleira criada com sucesso no setor '{setor}'!")
 
         elif opcao == '4':
-            setor = input("Digite o nome do novo setor: ").strip()
-            corredor = input("Corredor: ")
-            max_colunas = int(input("Quantas colunas: "))
-            max_niveis = int(input("Quantos níveis: "))
             id_del = int(input("ID da prateleira para excluir: "))
             repo_prateleira.delete(id_del)
             print("Prateleira excluída.")
@@ -859,10 +795,9 @@ def menu_prateleira():
             mesmas = [p for p in todas_prateleiras if p.setor == prateleira.setor and str(p.corredor) == str(prateleira.corredor)]
 
             mostrar_prateleira(prateleira, mesmas)
-        
+
         elif opcao == '6':
             break
-
 # ---------------- MENU UNIDADE ----------------
 def menu_unidade():
     while True:
@@ -902,6 +837,7 @@ def menu_unidade():
         elif opcao == '5':
             break
 
+# ---------------- MENU MOVIMENTAÇÃO ----------------
 # ---------------- MENU MOVIMENTAÇÃO ----------------
 def menu_movimentacao():
     while True:
@@ -975,7 +911,7 @@ def menu_movimentacao():
 
             # 3. Criar a nova movimentação com os IDs válidos
             tipo = input("Tipo da movimentação: ")
-            data = datetime.now()
+            data = datetime.datetime.now()
 
             # ESTA É A FORMA QUE DEVE FUNCIONAR AGORA, PASSANDO OS IDs.
             nova_mov = Movimentacao(
@@ -999,6 +935,7 @@ def menu_movimentacao():
 
         elif opcao == '5':
             break
+
 
 def menu_consultas():
     while True:
@@ -1045,6 +982,7 @@ def menu_consultas():
             break
         else:
             print("Opção inválida, tente novamente.")
+
 
 def login():
     print("\n--- Autenticação ---")

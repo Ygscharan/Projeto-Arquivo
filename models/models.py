@@ -32,8 +32,8 @@ class Prateleira(Base):
 
     setor: Mapped[str] = mapped_column(VARCHAR(100))
     corredor: Mapped[str] = mapped_column(VARCHAR(50))    # aceita 'A', '1', etc.
-    coluna: Mapped[str] = mapped_column(VARCHAR(50))
-    nivel: Mapped[str] = mapped_column(VARCHAR(50))
+    max_colunas: Mapped[int] = mapped_column(Integer, default=6)
+    max_niveis: Mapped[int] = mapped_column(Integer, default=5)
 
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
 
@@ -83,6 +83,9 @@ class Caixa(Base):
     prateleira_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('prateleira.id'), default=None)
     data_eliminacao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, default=None)
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
+
+    coluna: Mapped[Optional[str]] = mapped_column(VARCHAR(50), default=None)
+    nivel: Mapped[Optional[str]] = mapped_column(VARCHAR(50), default=None)
 
     # relationships (defaults)
     prateleira: Mapped[Optional['Prateleira']] = relationship('Prateleira', back_populates='caixas', default=None)
