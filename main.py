@@ -13,7 +13,7 @@ from repository.PrateleiraRepository import PrateleiraRepository
 from repository.UnidadeRepository import UnidadeRepository
 from repository.UsuarioRepository import UsuarioRepository
 
-
+import os
 
 repo_usuario = UsuarioRepository()
 repo_caixa = CaixaRepository()
@@ -146,9 +146,6 @@ def ranking_prateleiras():
         print(f"{idx}. Prateleira ID {p.id} ({p.setor}-{p.corredor}): {total_caixas} caixa(s)")
 
 def mostrar_prateleira(prateleira):
-    """
-    Exibe a prateleira em forma de tabela, mostrando apenas as caixas que pertencem a ela.
-    """
     print(f"\nPrateleira: {prateleira.setor} | Corredor: {prateleira.corredor}")
 
     try:
@@ -194,9 +191,9 @@ def visualizar_prateleira_tabela(prateleira_id):
     mostrar_prateleira(prateleira)
 
 def cadastrar_usuario():
+    """Função para coletar dados, validar o e-mail e registrar um novo usuário."""
     print("\n--- Cadastro de Novo Usuário ---")
     nome = input("Nome completo: ").strip()
-    
 
     while True:
         email = input("E-mail: ").strip()
@@ -210,8 +207,24 @@ def cadastrar_usuario():
             print("Erro: Formato de e-mail inválido. O e-mail deve conter um '@'. Tente novamente.")
 
     password = getpass.getpass("Senha: ")
-    tipo = input("Função do usuário (ex: admin, normal): ").strip()
     
+    funcoes_permitidas = ["Preparador", "Admin", "Digitalizador"]
+    
+    print("\nEscolha a função do usuário:")
+    for i, funcao in enumerate(funcoes_permitidas, 1):
+        print(f"{i}. {funcao}")
+    
+    while True:
+        try:
+            escolha_funcao = int(input("Digite o número da função: "))
+            if 1 <= escolha_funcao <= len(funcoes_permitidas):
+                tipo = funcoes_permitidas[escolha_funcao - 1]
+                break 
+            else:
+                print("Número inválido. Por favor, escolha uma das opções.")
+        except ValueError:
+            print("Entrada inválida. Por favor, digite um número.")
+
     if not all([nome, password, tipo]):
         print("Nome, senha e função são obrigatórios. Cadastro cancelado.")
         return
@@ -275,13 +288,33 @@ def menu_usuario():
                 print("Usuário não encontrado.")
 
         elif opcao == '4':
-            nome = input("Nome do novo usuário: ")
-            email = input("E-mail: ")
-            senha = input("Senha: ")
-            tipo = input("Tipo (Ex: admin, normal): ")
-            novo_usuario = Usuario(nome=nome, email=email, senha=senha, tipo=tipo)
-            repo_usuario.add(novo_usuario)
-            print("Usuário criado com sucesso!")
+            nome = input("Nome do novo usuário: ").strip()
+            email = input("E-mail: ").strip()
+
+            if '@' not in email:
+                print("Formato de e-mail inválido. Cadastro cancelado.")
+                continue
+            
+            senha = getpass.getpass("Senha: ")
+
+            funcoes_permitidas = ["Preparador", "Admin", "Digitalizador"]
+            print("\nEscolha a função do usuário:")
+
+            for i, funcao in enumerate(funcoes_permitidas, 1):
+                print(f"{i}. {funcao}")
+            
+            while True:
+                try:
+                    escolha_funcao = int(input("Digite o número da função: "))
+                    if 1 <= escolha_funcao <= len(funcoes_permitidas):
+                        tipo = funcoes_permitidas[escolha_funcao - 1]
+                        break
+                    else:
+                        print("Número inválido. Por favor, escolha uma das opções.")
+                except ValueError:
+                    print("Entrada inválida. Por favor, digite um número.")
+
+            create_user_with_email_password(nome, email, senha, tipo)
 
         elif opcao == '5':
             alterar_usuario() 
@@ -311,7 +344,7 @@ def alterar_usuario():
     if novo_email:
         usuario.email = novo_email
 
-    nova_senha = input(f"Nova senha (atual: {usuario.senha}): ")
+    nova_senha = input(f"Nova senha: ")
     if nova_senha:
         usuario.senha = nova_senha
 
@@ -350,63 +383,51 @@ def importar_caixas_csv():
         with open(caminho_arquivo, mode='r', encoding='utf-8-sig') as file:
             reader = csv.DictReader(file)
             
-            # --- LÓGICA DE IMPORTAÇÃO CORRIGIDA E MELHORADA ---
             print("Iniciando importação...")
             sucesso = 0
             falha = 0
             
-            # Cache para documentos já buscados/criados, para evitar buscas repetidas no banco
             documentos_cache = {}
 
             for row_num, row in enumerate(tqdm(reader, total=total_rows, desc="Importando Caixas"), start=2):
                 try:
-                    # Validação de número de caixa (mantém a lógica anterior)
                     numero_caixa = int(row['numero_caixa'])
                     if repo_caixa.numero_exists(numero_caixa):
                         raise ValueError(f"Número de caixa {numero_caixa} já existe.")
 
-                    # Processamento da data de eliminação
                     data_eliminacao_str = row.get('data_eliminacao', '').strip()
                     data_eliminacao = parse_data_flexivel(data_eliminacao_str) if data_eliminacao_str else None
 
-                    # Processamento da unidade
                     unidade = repo_unidade.get_by_id(int(row['unidade_id']))
                     if not unidade:
                         raise ValueError(f"Unidade com ID '{row['unidade_id']}' não encontrada.")
-                    
-                    # Processamento da prateleira e posição
+
                     prateleira = repo_prateleira.get_by_id(int(row['prateleira_id'])) if row.get('prateleira_id') else None
                     if prateleira_id_str := row.get('prateleira_id', ''):
                         prateleira = repo_prateleira.get_by_id(int(prateleira_id_str))
                         if not prateleira:
                              tqdm.write(f"Aviso na linha {row_num}: Prateleira ID '{prateleira_id_str}' não encontrada. Caixa ficará avulsa.")
-                    
-                    # --- LÓGICA DE DOCUMENTOS CORRIGIDA ---
+
                     docs_associados = []
-                    # Lê a coluna 'documento' do novo CSV
                     documentos_str = row.get('documento', '').strip()
                     if documentos_str:
-                        # Separa múltiplos documentos que estão na mesma célula
                         documentos_no_csv = [d.strip() for d in documentos_str.split(';')]
                         for doc_info in documentos_no_csv:
                             if not doc_info: continue
-                            
-                            # Tenta extrair ID, Título e Tipo
+
                             try:
                                 doc_id_str, doc_titulo, doc_tipo = doc_info.split('-', 2)
                                 doc_id = int(doc_id_str)
 
-                                # Verifica se o documento já está no cache
+
                                 if doc_id in documentos_cache:
                                     docs_associados.append(documentos_cache[doc_id])
                                 else:
-                                    # Se não está no cache, busca no banco
                                     doc_existente = repo_documento.get_by_id(doc_id)
                                     if doc_existente:
                                         documentos_cache[doc_id] = doc_existente
                                         docs_associados.append(doc_existente)
                                     else:
-                                        # Se não existe no banco, cria um novo
                                         tqdm.write(f"  -> Documento '{doc_titulo}' (ID: {doc_id}) não encontrado, criando novo.")
                                         novo_doc = Documento(id=doc_id, titulo=doc_titulo, tipo=doc_tipo, data_emissao=datetime.datetime.now())
                                         repo_documento.session.add(novo_doc)
@@ -416,7 +437,6 @@ def importar_caixas_csv():
                                 tqdm.write(f"Aviso na linha {row_num}: Formato de documento inválido ('{doc_info}'). Documento ignorado.")
                                 continue
 
-                    # Cria o objeto Caixa com todos os dados
                     nova_caixa = Caixa(
                         numero_caixa=numero_caixa,
                         data_criacao=datetime.datetime.now(),
@@ -425,7 +445,7 @@ def importar_caixas_csv():
                         prateleira=prateleira,
                         coluna=row.get('coluna'),
                         nivel=row.get('nivel'),
-                        documentos=docs_associados # Adiciona a lista de documentos
+                        documentos=docs_associados 
                     )
                     repo_caixa.session.add(nova_caixa)
                     sucesso += 1
@@ -434,7 +454,6 @@ def importar_caixas_csv():
                     tqdm.write(f"Erro na linha {row_num}: {e}. Caixa não importada.")
                     falha += 1
             
-            # Commit final para salvar tudo no banco
             repo_caixa.session.commit()
             print(f"\nImportação concluída! {sucesso} caixas criadas, {falha} falhas.")
 
@@ -511,139 +530,93 @@ def menu_caixa():
                 print("Caixa não encontrada.")
 
         elif opcao == '3':
-            while True:
+             while True:
                 try:
                     numero_str = input("Número da Caixa (ou deixe em branco para cancelar): ").strip()
                     if not numero_str:
                         print("Cadastro cancelado.")
                         return 
-
                     numero = int(numero_str)
-
                     if repo_caixa.numero_exists(numero):
                         print(f"Erro: A caixa com o número {numero} já existe. Por favor, tente outro número.")
                     else:
-                        break
+                        break 
                 except ValueError:
                     print("Erro: Por favor, digite um número válido.")
-
-            data_input = input("Data de eliminação (enter para CAIXA PERMANENTE) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
-            data_elim = None if data_input == "" else parse_data_flexivel(data_input)
-            if data_input and data_elim is None:
-                print("Formato de data inválido. Tente novamente.")
-                continue
-
-            unidades = repo_unidade.get_all()
-            prateleiras = repo_prateleira.get_all()
-            if not unidades or not prateleiras:
-                print("Unidade ou prateleira padrão não encontrada. Crie antes de adicionar caixas.")
-                continue
-
-            print("\nUnidades disponíveis:")
-            for u in unidades:
-                print(f"ID: {u.id} - Nome: {u.nome} - Código: {u.codigo}")
-            unidade_input = input("ID da unidade para associar (enter para usar a primeira): ").strip()
-            if unidade_input == "":
-                unidade = unidades[0]
-            else:
+             data_input = input("Data de eliminação (enter para CAIXA PERMANENTE) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
+             data_elim = None if data_input == "" else parse_data_flexivel(data_input)
+             if data_input and data_elim is None: print("Formato de data inválido. Tente novamente."); continue
+             unidades = repo_unidade.get_all()
+             prateleiras = repo_prateleira.get_all()
+             if not unidades or not prateleiras: print("Unidade ou prateleira padrão não encontrada."); continue
+             print("\nUnidades disponíveis:")
+             for u in unidades: print(f"ID: {u.id} - Nome: {u.nome} - Código: {u.codigo}")
+             unidade_input = input("ID da unidade para associar (enter para usar a primeira): ").strip()
+             if unidade_input == "": unidade = unidades[0]
+             else:
                 try:
                     uid = int(unidade_input)
-                except ValueError:
-                    print("ID de unidade inválido.")
-                    continue
-                unidade = repo_unidade.get_by_id(uid)
-                if not unidade:
-                    print("Unidade não encontrada.")
-                    continue
-
-            print("\nPrateleiras disponíveis:")
-            for p in prateleiras:
-                print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Max Colunas: {p.max_colunas} - Max Níveis: {p.max_niveis}")
-            pr_input = input("ID da prateleira para associar (enter para deixar como avulsa): ").strip()
-            
-            prateleira = None
-            if pr_input:
+                    unidade = repo_unidade.get_by_id(uid)
+                    if not unidade: print("Unidade não encontrada."); continue
+                except ValueError: print("ID de unidade inválido."); continue
+             print("\nPrateleiras disponíveis:")
+             for p in prateleiras: print(f"ID: {p.id} - Setor: {p.setor} - Corredor: {p.corredor} - Max Colunas: {p.max_colunas} - Max Níveis: {p.max_niveis}")
+             pr_input = input("ID da prateleira para associar (enter para deixar como avulsa): ").strip()
+             prateleira = None
+             if pr_input:
                 try:
                     pid = int(pr_input)
                     prateleira = repo_prateleira.get_by_id(pid)
-                    if not prateleira:
-                        print("Prateleira não encontrada. A caixa será criada como avulsa.")
-                except ValueError:
-                    print("ID de prateleira inválido. A caixa será criada como avulsa.")
-
-            coluna_alocar = None
-            nivel_alocar = None
-
-            if prateleira:
+                    if not prateleira: print("Prateleira não encontrada. A caixa será criada como avulsa.")
+                except ValueError: print("ID de prateleira inválido. A caixa será criada como avulsa.")
+             coluna_alocar, nivel_alocar = None, None
+             
+             nome_setor = None 
+             if prateleira:
+                nome_setor = prateleira.setor
                 print(f"Buscando espaço na prateleira ID {prateleira.id}...")
                 caixas_na_prateleira = repo_caixa.get_by_prateleira(prateleira.id)
-                posicoes_ocupadas = set(
-                    (int(c.coluna), int(c.nivel)) 
-                    for c in caixas_na_prateleira 
-                    if c.coluna is not None and c.nivel is not None
-                )
-
-                max_col = int(prateleira.max_colunas)
-                max_niv = int(prateleira.max_niveis)
-                
+                posicoes_ocupadas = set((int(c.coluna), int(c.nivel)) for c in caixas_na_prateleira if c.coluna is not None and c.nivel is not None)
+                max_col, max_niv = int(prateleira.max_colunas), int(prateleira.max_niveis)
                 slot_encontrado = False
                 for nivel_atual in range(1, max_niv + 1):
                     for coluna_atual in range(1, max_col + 1):
                         if (coluna_atual, nivel_atual) not in posicoes_ocupadas:
-                            coluna_alocar = coluna_atual
-                            nivel_alocar = nivel_atual
-                            slot_encontrado = True
-                            break
-                    if slot_encontrado:
-                        break
-                
+                            coluna_alocar, nivel_alocar = coluna_atual, nivel_atual
+                            slot_encontrado = True; break
+                    if slot_encontrado: break
                 if not slot_encontrado:
-                    print(f"AVISO: A prateleira '{prateleira.setor}' está cheia! A caixa será criada como avulsa.")
-                    prateleira = None 
-            
-            documentos = repo_documento.get_all()
-            selected_docs = []
-            print("\nDocumentos disponíveis:")
-            if documentos:
-                for d in documentos:
-                    print(f"ID: {d.id} - Título: {d.titulo} - Tipo: {d.tipo}")
-            else:
-                print("  (nenhum documento cadastrado)")
-            ids_input = input("IDs dos documentos para associar (vírgula-separados, enter para nenhum): ").strip()
-            if ids_input:
+                    print(f"AVISO: A prateleira '{nome_setor}' está cheia! A caixa será criada como avulsa.")
+                    prateleira = None
+             
+             documentos = repo_documento.get_all()
+             selected_docs = []
+             print("\nDocumentos disponíveis:")
+             if documentos:
+                for d in documentos: print(f"ID: {d.id} - Título: {d.titulo} - Tipo: {d.tipo}")
+             else: print("  (nenhum documento cadastrado)")
+             ids_input = input("IDs dos documentos para associar (vírgula-separados, enter para nenhum): ").strip()
+             if ids_input:
                 for part in ids_input.split(','):
                     part = part.strip()
-                    if not part:
-                        continue
+                    if not part: continue
                     try:
                         did = int(part)
-                    except ValueError:
-                        print(f"Ignorando ID inválido: {part}")
-                        continue
-                    doc = repo_documento.get_by_id(did)
-                    if doc:
-                        selected_docs.append(doc)
-                    else:
-                        print(f"Documento com ID {did} não encontrado; ignorado.")
-
-            nova_caixa = Caixa(
-                numero_caixa=numero,
-                data_criacao=datetime.datetime.now(),
-                data_eliminacao=data_elim,
-                coluna=str(coluna_alocar) if coluna_alocar is not None else None,
-                nivel=str(nivel_alocar) if nivel_alocar is not None else None
-            )
-            
-            nova_caixa.unidade = unidade
-            if prateleira:
-                nova_caixa.prateleira = prateleira
-            if selected_docs:
-                nova_caixa.documentos = selected_docs
-            repo_caixa.add(nova_caixa)
-
-            if prateleira:
-                print(f"Caixa {numero} criada e alocada AUTOMATICAMENTE na prateleira '{prateleira.setor}' (Coluna: {coluna_alocar}, Nível: {nivel_alocar})!")
-            else:
+                        doc = repo_documento.get_by_id(did)
+                        if doc: selected_docs.append(doc)
+                        else: print(f"Documento com ID {did} não encontrado; ignorado.")
+                    except ValueError: print(f"Ignorando ID inválido: {part}")
+             
+             nova_caixa = Caixa(numero_caixa=numero, data_criacao=datetime.datetime.now(), data_eliminacao=data_elim, coluna=str(coluna_alocar) if coluna_alocar is not None else None, nivel=str(nivel_alocar) if nivel_alocar is not None else None)
+             nova_caixa.unidade = unidade
+             if prateleira: nova_caixa.prateleira = prateleira
+             if selected_docs: nova_caixa.documentos = selected_docs
+             
+             repo_caixa.add(nova_caixa)
+             
+             if prateleira:
+                print(f"Caixa {numero} criada e alocada AUTOMATICAMENTE na prateleira '{nome_setor}' (Coluna: {coluna_alocar}, Nível: {nivel_alocar})!")
+             else: 
                 print(f"Caixa {numero} criada como avulsa (sem prateleira)!")
 
         elif opcao == '4':
@@ -814,12 +787,9 @@ def menu_caixa():
                 for nivel_atual in range(1, max_niv + 1):
                     for coluna_atual in range(1, max_col + 1):
                         if (coluna_atual, nivel_atual) not in posicoes_ocupadas:
-                            # Prepara a caixa para ser movida (atualiza em memória)
                             caixa.prateleira = prateleira_destino
                             caixa.coluna = str(coluna_atual)
                             caixa.nivel = str(nivel_atual)
-                            
-                            # Adiciona à lista para salvar depois
                             caixas_para_mover.append(caixa)
                             
                             posicoes_ocupadas.add((coluna_atual, nivel_atual))
@@ -835,8 +805,7 @@ def menu_caixa():
             
             if caixas_para_mover:
                 print(f"\nSalvando {len(caixas_para_mover)} caixas no banco de dados...")
-                # O repo.update já lida com o merge, commit e remove.
-                # Chamamos um por um, mas a sessão será renovada a cada chamada.
+
                 for caixa_movida in caixas_para_mover:
                     repo_caixa.update(caixa_movida)
                 print("Operação concluída com sucesso!")
@@ -856,9 +825,14 @@ def menu_caixa():
             try:
                 id_del = int(input("Digite o ID da caixa que deseja excluir: "))
                 confirmacao = input(f"Tem certeza que deseja excluir a caixa com ID {id_del}? (s/n): ").strip().lower()
+                
                 if confirmacao == 's':
-                    repo_caixa.delete(id_del)
-                    print(f"Caixa com ID {id_del} excluída com sucesso.")
+                    sucesso = repo_caixa.delete(id_del)
+                    
+                    if sucesso:
+                        print(f"Caixa com ID {id_del} excluída com sucesso.")
+                    else:
+                        print(f"Erro: Caixa com ID {id_del} não encontrada.")
                 else:
                     print("Exclusão cancelada.")
             except ValueError:
@@ -896,7 +870,7 @@ def menu_documento():
             data_input = input("Data de emissão (enter para usar data atual / vazio para sem data) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
 
             if data_input == "":
-                data_emissao = datetime.now()
+                data_emissao = datetime.datetime.now()
             else:
                 data_emissao = parse_data_flexivel(data_input)
                 if data_emissao is None:
@@ -1008,16 +982,12 @@ def menu_prateleira():
         elif opcao == '3':
             prateleiras_existentes = repo_prateleira.get_all()
             setores_existentes = sorted(set(p.setor for p in prateleiras_existentes))
-            
-            setor = None 
-
+            setor = None
             if setores_existentes:
                 print("Setores já cadastrados:")
                 for idx, setor_nome in enumerate(setores_existentes, 1):
                     print(f"{idx}. {setor_nome}")
-                
                 escolha_setor = input("Deseja usar um setor existente (E) ou cadastrar um novo (N)? [E/N]: ").strip().upper()
-                
                 if escolha_setor == 'E':
                     while True:
                         try:
@@ -1035,16 +1005,14 @@ def menu_prateleira():
                 else:
                     print("Opção inválida. Voltando ao menu.")
                     continue
-            else: 
+            else:
                 print("Nenhum setor cadastrado ainda.")
                 setor = input("Digite o nome do primeiro setor: ").strip()
-
             if setor:
                 try:
                     corredor = input(f"Digite o número do CORREDOR para o setor '{setor}': ")
                     max_colunas = int(input("Quantas COLUNAS a prateleira terá? "))
                     max_niveis = int(input("Quantos NÍVEIS a prateleira terá? "))
-
                     nova_prateleira = Prateleira(
                         setor=setor, 
                         corredor=corredor, 
@@ -1072,10 +1040,8 @@ def menu_prateleira():
                     print("Prateleira não encontrada.")
                     continue
 
-                todas_prateleiras = repo_prateleira.get_all()
-                mesmas = [p for p in todas_prateleiras if p.setor == prateleira.setor and str(p.corredor) == str(prateleira.corredor)]
+                mostrar_prateleira(prateleira)
 
-                mostrar_prateleira(prateleira, mesmas)
             except ValueError:
                 print("ID inválido.")
         
@@ -1265,7 +1231,7 @@ def menu_consultas():
 # ---------------- MENU PRINCIPAL ----------------
 def menu_principal():
     usuario_atual = None
-
+    
     while True:
         if usuario_atual:
             print("\n===== MENU PRINCIPAL =====")
@@ -1277,8 +1243,9 @@ def menu_principal():
             print("5. Unidades")
             print("6. Movimentações")
             print("7. Consultas")
-            print("8. Logout")
-            print("9. Sair")
+            print("8. Abrir Dashboard Web")
+            print("9. Logout")
+            print("10. Sair do Sistema")
             opcao = input("Escolha: ")
 
             if opcao == '1':
@@ -1296,20 +1263,29 @@ def menu_principal():
             elif opcao == '7':
                 menu_consultas()
             elif opcao == '8':
+                print("\nIniciando o dashboard... Por favor, aguarde.")
+                print("O dashboard será aberto no seu navegador. Para voltar ao menu, feche o terminal do dashboard.")
+                try:
+                    os.system('streamlit run dashboard.py')
+                except Exception as e:
+                    print(f"Erro ao iniciar o dashboard: {e}")
+                    print("Verifique se o Streamlit está instalado corretamente (`pip install streamlit`).")
+            
+            elif opcao == '9':
                 usuario_atual = None
                 print("Logout realizado.")
-            elif opcao == '9':
+            elif opcao == '10':
                 break
         else:
             print("\n===== BEM-VINDO AO SISTEMA DE ARQUIVO =====")
             print("1. Fazer Login")
-            print("2. Cadastrar Novo Usuário") 
-            print("3. Sair")                   
+            print("2. Cadastrar Novo Usuário")
+            print("3. Sair")
             opcao = input("Escolha: ")
             if opcao == '1':
                 usuario_atual = login()
             elif opcao == '2':
-                cadastrar_usuario() 
+                cadastrar_usuario()
             elif opcao == '3':
                 break
 

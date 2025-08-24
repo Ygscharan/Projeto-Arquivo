@@ -26,14 +26,12 @@ def initialize_firebase():
 
 
 def create_user_with_email_password(nome, email, password, tipo):
-    """Cria um novo usuário, salvando a SENHA HASH no banco de dados local."""
     repo_usuario = UsuarioRepository()
 
     if repo_usuario.get_by_email(email):
         print("Erro: Este e-mail já está cadastrado."); return False
 
     try:
-        # Cria o usuário no Firebase (o Firebase lida com a segurança da senha dele)
         user_firebase = auth.create_user(
             email=email,
             password=password,
@@ -41,14 +39,12 @@ def create_user_with_email_password(nome, email, password, tipo):
         )
         print(f"Usuário criado com sucesso no Firebase: {user_firebase.email}")
 
-        # --- ALTERAÇÃO DE SEGURANÇA AQUI ---
-        # Gera o hash da senha antes de salvar no seu banco de dados
         senha_hash = generate_password_hash(password)
 
         novo_usuario_local = Usuario(
             nome=nome,
             email=email,
-            senha=senha_hash, # Salva o HASH, não a senha original
+            senha=senha_hash,
             tipo=tipo
         )
         repo_usuario.add(novo_usuario_local)
@@ -65,8 +61,6 @@ def login_with_email_password(email, password):
     try:
         usuario_local = repo_usuario.get_by_email(email)
 
-        # --- ALTERAÇÃO DE SEGURANÇA AQUI ---
-        # Verifica se o usuário existe E se a senha fornecida corresponde ao hash salvo
         if usuario_local and check_password_hash(usuario_local.senha, password):
             user_firebase = auth.get_user_by_email(email)
             
@@ -84,15 +78,17 @@ def login_with_email_password(email, password):
     except Exception as e:
         print(f"Ocorreu um erro inesperado durante o login: {e}"); return None
     
-    
+
 def login_with_email_password(email, password):
     repo_usuario = UsuarioRepository()
     
     try:
         usuario_local = repo_usuario.get_by_email(email)
 
-        if usuario_local and usuario_local.senha == password:
+        if usuario_local and check_password_hash(usuario_local.senha, password):
+            
             user_firebase = auth.get_user_by_email(email)
+            
             if not user_firebase.display_name and usuario_local.nome:
                 print("Sincronizando nome de exibição com o Firebase...")
                 auth.update_user(user_firebase.uid, display_name=usuario_local.nome)
@@ -104,9 +100,6 @@ def login_with_email_password(email, password):
             print("Erro de login: E-mail ou senha incorretos.")
             return None
             
-    except auth.UserNotFoundError:
-        print("Erro de consistência: O usuário não foi encontrado no Firebase.")
-        return None
     except Exception as e:
         print(f"Ocorreu um erro inesperado durante o login: {e}")
         return None

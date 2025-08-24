@@ -1,23 +1,18 @@
 from ListaEncadeada import ListaEncadeada
 from datetime import datetime
 
-# Classe para gerenciar prateleiras com hash interno de caixas
-
-# Classe para gerenciar prateleiras com hash interno de caixas
 class Prateleira:
     def __init__(self, setor, corredor, coluna, nivel):
-        self.id = None  # Será definido ao cadastrar
+        self.id = None 
         self.setor = setor
         self.corredor = corredor
         self.coluna = coluna
         self.nivel = nivel
-        # nivel = número de índices, coluna = limite de caixas por índice
         self.caixas = PrateleiraHash(tamanho=nivel, limite_por_indice=coluna)
 
 
 class PrateleiraHash:
-    def __init__(self, *args, **kwargs):
-        # Agora armazena todas as caixas em uma lista única
+    def __init__(self):
         self.caixas = []
 
     def inserir_caixa(self, caixa):
@@ -57,7 +52,6 @@ class PrateleiraHash:
         return ", ".join(str(caixa.numero_caixa) for caixa in self.caixas)
 
 
-# Repositório de prateleiras
 repo_prateleira_hash = []
 
 def menu_prateleira():

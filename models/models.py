@@ -58,7 +58,7 @@ class Usuario(Base):
 
     nome: Mapped[str] = mapped_column(VARCHAR(125))
     email: Mapped[str] = mapped_column(VARCHAR(125))
-    senha: Mapped[str] = mapped_column(VARCHAR(100))
+    senha: Mapped[str] = mapped_column(VARCHAR(255))
     tipo: Mapped[str] = mapped_column(VARCHAR(50))
 
     id: Mapped[Optional[int]] = mapped_column(Integer, primary_key=True, autoincrement=True, default=None)
@@ -74,11 +74,10 @@ class Caixa(Base):
     __tablename__ = 'caixa'
     __table_args__ = (PrimaryKeyConstraint('id', name='caixa_pk'),)
 
-    # campos obrigatórios (sem default) primeiro
     numero_caixa: Mapped[int] = mapped_column(Integer)
     data_criacao: Mapped[datetime.datetime] = mapped_column(DateTime)
 
-    # campos opcionais / com default depois
+
     unidade_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('unidade.id'), default=None)
     prateleira_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('prateleira.id'), default=None)
     data_eliminacao: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, default=None)
@@ -87,7 +86,7 @@ class Caixa(Base):
     coluna: Mapped[Optional[str]] = mapped_column(VARCHAR(50), default=None)
     nivel: Mapped[Optional[str]] = mapped_column(VARCHAR(50), default=None)
 
-    # relationships (defaults)
+
     prateleira: Mapped[Optional['Prateleira']] = relationship('Prateleira', back_populates='caixas', default=None)
     unidade: Mapped[Optional['Unidade']] = relationship('Unidade', back_populates='caixas', default=None)
     documentos: Mapped[List['Documento']] = relationship('Documento', secondary='caixa_documento', back_populates='caixas', default_factory=list)

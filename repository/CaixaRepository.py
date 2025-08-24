@@ -39,9 +39,12 @@ class CaixaRepository:
         self.session.commit()
         self.session.remove() 
 
-    def delete(self, caixa_id: int) -> None:
+    def delete(self, caixa_id: int) -> bool: 
         obj = self.get_by_id(caixa_id)
         if obj:
             self.session.delete(obj)
             self.session.commit()
             self.session.remove()
+            return True 
+        
+        return False 
