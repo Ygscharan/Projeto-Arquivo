@@ -1,0 +1,101 @@
+id,numero_caixa,data_criacao,nivel,coluna,unidade_id,prateleira_id,data_eliminacao,documento
+1,2001,2023-10-26 10:00:00,1,1,1,1,,6-DRP-financeiro;9-AET-transporte
+2,2002,2023-10-26 10:05:00,1,2,1,1,,7-Ordem_de_Servico-operacional
+3,2003,2023-10-27 11:30:00,2,1,2,2,,3-Nota_Fiscal-fiscal;5-Frete-transferencia
+4,2004,2023-10-28 14:00:00,2,2,2,2,,2-Receituario_Agronomico-receita
+5,2005,2023-11-01 09:15:00,3,3,1,3,,5-Frete-transferencia;3-Nota_Fiscal-fiscal
+6,2006,2023-11-02 16:45:00,3,4,1,3,2028-11-01 00:00:00,4-Comercial-frete
+7,2007,2023-11-05 08:00:00,4,1,3,4,,1-Admissional-contrato;3-Nota_Fiscal-fiscal
+8,2008,2023-11-06 13:20:00,4,2,3,4,,6-DRP-financeiro
+9,2009,2023-11-10 10:10:00,5,5,2,5,,2-Receituario_Agronomico-receita
+10,2010,2023-11-11 11:11:00,1,3,2,5,,8-Relatorio_Mensal-gestao
+11,2011,2023-11-15 15:00:00,2,4,1,6,,3-Nota_Fiscal-fiscal;2-Receituario_Agronomico-receita
+12,2012,2023-11-20 17:00:00,3,1,1,6,,5-Frete-transferencia;2-Receituario_Agronomico-receita
+13,2013,2023-11-21 09:30:00,4,3,3,7,,6-DRP-financeiro;3-Nota_Fiscal-fiscal
+14,2014,2023-11-22 10:45:00,5,4,3,7,,5-Frete-transferencia;7-Ordem_de_Servico-operacional
+15,2015,2023-12-01 14:55:00,1,5,2,8,2029-12-01 00:00:00,2-Receituario_Agronomico-receita
+16,2016,2023-12-04 18:00:00,2,5,2,8,,2-Receituario_Agronomico-receita;6-DRP-financeiro
+17,2017,2023-12-05 12:00:00,3,2,1,9,,4-Comercial-frete;3-Nota_Fiscal-fiscal
+18,2018,2023-12-10 11:00:00,4,5,1,9,,1-Admissional-contrato
+19,2019,2023-12-12 10:30:00,5,1,3,10,,4-Comercial-frete;10-Certidao_Negativa-juridico
+20,2020,2023-12-15 09:00:00,1,4,3,10,,6-DRP-financeiro
+21,2021,2024-01-10 14:20:00,2,3,2,1,,5-Frete-transferencia;3-Nota_Fiscal-fiscal
+22,2022,2024-01-11 16:50:00,3,5,2,2,,1-Admissional-contrato
+23,2023,2024-01-15 11:40:00,4,4,1,3,,7-Ordem_de_Servico-operacional
+24,2024,2024-01-18 10:25:00,5,2,1,4,,4-Comercial-frete;10-Certidao_Negativa-juridico
+25,2026,2024-01-20 08:55:00,1,6,3,5,2030-01-20 00:00:00,2-Receituario_Agronomico-receita;5-Frete-transferencia
+26,2027,2024-02-16 18:46:00,1,2,3,9,,6-DRP-financeiro;9-AET-transporte
+27,2028,2024-02-17 13:46:00,4,1,1,4,2031-02-15 13:46:00,7-Ordem_de_Servico-operacional;6-DRP-financeiro
+28,2029,2024-02-19 03:37:00,2,3,2,1,2031-02-17 03:37:00,7-Ordem_de_Servico-operacional;9-AET-transporte
+29,2030,2024-02-19 10:56:00,2,5,3,2,,6-DRP-financeiro
+30,2031,2024-02-20 21:19:00,5,2,3,1,,9-AET-transporte;5-Frete-transferencia
+31,2032,2024-02-21 14:36:00,5,6,3,5,,7-Ordem_de_Servico-operacional
+32,2033,2024-02-23 03:09:00,5,4,1,5,,4-Comercial-frete
+33,2034,2024-02-23 10:32:00,3,6,1,6,,2-Receituario_Agronomico-receita;10-Certidao_Negativa-juridico
+34,2035,2024-02-24 15:44:00,1,5,1,3,2030-02-22 15:44:00,4-Comercial-frete;3-Nota_Fiscal-fiscal
+35,2036,2024-02-25 12:52:00,3,4,2,8,2028-02-24 12:52:00,7-Ordem_de_Servico-operacional
+36,2037,2024-02-26 18:23:00,3,4,1,7,,6-DRP-financeiro;9-AET-transporte
+37,2038,2024-02-27 11:57:00,4,3,3,5,,8-Relatorio_Mensal-gestao;7-Ordem_de_Servico-operacional
+38,2039,2024-02-28 20:40:00,3,5,1,9,,9-AET-transporte;6-DRP-financeiro
+39,2040,2024-03-01 08:32:00,1,6,3,2,,8-Relatorio_Mensal-gestao;2-Receituario_Agronomico-receita
+40,2041,2024-03-01 21:44:00,1,3,1,3,,5-Frete-transferencia
+41,2042,2024-03-02 15:51:00,4,2,2,5,,2-Receituario_Agronomico-receita;5-Frete-transferencia
+42,2043,2024-03-03 10:35:00,4,3,3,6,,7-Ordem_de_Servico-operacional;4-Comercial-frete
+43,2044,2024-03-05 04:38:00,2,6,2,3,,3-Nota_Fiscal-fiscal
+44,2045,2024-03-05 20:16:00,2,1,3,8,,7-Ordem_de_Servico-operacional;5-Frete-transferencia
+45,2046,2024-03-07 02:05:00,2,6,2,2,,8-Relatorio_Mensal-gestao
+46,2047,2024-03-08 06:34:00,2,4,1,10,2028-03-07 06:34:00,6-DRP-financeiro;8-Relatorio_Mensal-gestao
+47,2048,2024-03-08 22:46:00,1,6,3,6,,9-AET-transporte
+48,2049,2024-03-09 13:10:00,2,2,2,4,,9-AET-transporte;7-Ordem_de_Servico-operacional
+49,2050,2024-03-10 21:50:00,1,1,3,3,2028-03-09 21:50:00,7-Ordem_de_Servico-operacional
+50,2051,2024-03-11 09:18:00,5,6,1,10,,7-Ordem_de_Servico-operacional
+51,2052,2024-03-12 17:28:00,3,2,2,2,,2-Receituario_Agronomico-receita;1-Admissional-contrato
+52,2053,2024-03-14 03:09:00,4,1,1,8,2029-03-13 03:09:00,9-AET-transporte
+53,2054,2024-03-14 15:02:00,1,1,1,6,,8-Relatorio_Mensal-gestao;1-Admissional-contrato
+54,2055,2024-03-15 13:08:00,2,2,2,5,,3-Nota_Fiscal-fiscal
+55,2056,2024-03-17 00:08:00,5,5,3,2,,1-Admissional-contrato;8-Relatorio_Mensal-gestao
+56,2057,2024-03-17 18:24:00,1,5,1,4,,10-Certidao_Negativa-juridico
+57,2058,2024-03-19 01:35:00,1,2,2,6,,3-Nota_Fiscal-fiscal
+58,2059,2024-03-20 05:46:00,1,1,3,6,,7-Ordem_de_Servico-operacional;1-Admissional-contrato
+59,2060,2024-03-21 01:18:00,1,1,1,3,,2-Receituario_Agronomico-receita;10-Certidao_Negativa-juridico
+60,2061,2024-03-22 01:11:00,2,1,2,4,,3-Nota_Fiscal-fiscal
+61,2062,2024-03-23 04:48:00,3,1,3,10,,1-Admissional-contrato;9-AET-transporte
+62,2063,2024-03-24 07:44:00,2,3,3,7,,1-Admissional-contrato
+63,2064,2024-03-24 18:48:00,1,6,1,8,,6-DRP-financeiro;5-Frete-transferencia
+64,2065,2024-03-25 23:31:00,5,1,2,7,,7-Ordem_de_Servico-operacional
+65,2066,2024-03-26 21:17:00,4,3,2,2,,5-Frete-transferencia;9-AET-transporte
+66,2067,2024-03-28 02:31:00,3,3,3,3,,6-DRP-financeiro;3-Nota_Fiscal-fiscal
+67,2068,2024-03-28 23:49:00,2,2,2,5,,8-Relatorio_Mensal-gestao;9-AET-transporte
+68,2069,2024-03-29 18:13:00,4,3,2,5,,8-Relatorio_Mensal-gestao;7-Ordem_de_Servico-operacional
+69,2070,2024-03-31 05:48:00,4,1,3,9,,10-Certidao_Negativa-juridico;6-DRP-financeiro
+70,2071,2024-03-31 17:38:00,5,3,2,6,,4-Comercial-frete;8-Relatorio_Mensal-gestao
+71,2072,2024-04-01 21:32:00,1,6,3,5,,2-Receituario_Agronomico-receita;8-Relatorio_Mensal-gestao
+72,2073,2024-04-03 03:28:00,1,6,1,8,,10-Certidao_Negativa-juridico
+73,2074,2024-04-03 16:51:00,4,1,3,9,,4-Comercial-frete;9-AET-transporte
+74,2075,2024-04-05 05:21:00,4,6,1,6,,1-Admissional-contrato
+75,2076,2024-04-05 17:16:00,5,1,2,5,,8-Relatorio_Mensal-gestao;1-Admissional-contrato
+76,2077,2024-04-06 09:35:00,2,1,1,3,,1-Admissional-contrato
+77,2078,2024-04-07 22:22:00,5,2,3,5,,1-Admissional-contrato;7-Ordem_de_Servico-operacional
+78,2079,2024-04-09 01:12:00,1,6,1,4,,7-Ordem_de_Servico-operacional;4-Comercial-frete
+79,2080,2024-04-10 06:05:00,1,6,3,1,,5-Frete-transferencia
+80,2081,2024-04-10 20:43:00,4,5,1,2,2028-04-09 20:43:00,10-Certidao_Negativa-juridico
+81,2082,2024-04-12 07:28:00,5,3,3,10,2028-04-11 07:28:00,2-Receituario_Agronomico-receita;4-Comercial-frete
+82,2083,2024-04-12 16:45:00,5,5,2,7,,8-Relatorio_Mensal-gestao
+83,2084,2024-04-14 07:23:00,3,3,3,3,2030-04-13 07:23:00,6-DRP-financeiro
+84,2085,2024-04-14 18:36:00,2,4,1,4,2028-04-13 18:36:00,2-Receituario_Agronomico-receita;10-Certidao_Negativa-juridico
+85,2086,2024-04-15 09:16:00,3,3,3,8,,3-Nota_Fiscal-fiscal;6-DRP-financeiro
+86,2087,2024-04-16 20:16:00,1,3,2,7,,6-DRP-financeiro
+87,2088,2024-04-17 21:09:00,4,4,1,9,,7-Ordem_de_Servico-operacional
+88,2089,2024-04-18 17:16:00,3,4,3,9,2028-04-17 17:16:00,10-Certidao_Negativa-juridico;1-Admissional-contrato
+89,2090,2024-04-19 20:37:00,3,6,2,3,2030-04-18 20:37:00,2-Receituario_Agronomico-receita;7-Ordem_de_Servico-operacional
+90,2091,2024-04-21 03:20:00,1,5,3,6,,4-Comercial-frete;8-Relatorio_Mensal-gestao
+91,2092,2024-04-22 04:59:00,2,4,3,9,,3-Nota_Fiscal-fiscal;2-Receituario_Agronomico-receita
+92,2093,2024-04-23 06:15:00,1,6,1,4,,3-Nota_Fiscal-fiscal
+93,2094,2024-04-23 09:27:00,4,4,1,3,,3-Nota_Fiscal-fiscal;10-Certidao_Negativa-juridico
+94,2095,2024-04-24 22:39:00,3,3,2,10,,1-Admissional-contrato;3-Nota_Fiscal-fiscal
+95,2096,2024-04-26 08:09:00,4,6,2,7,,3-Nota_Fiscal-fiscal;9-AET-transporte
+96,2097,2024-04-26 23:32:00,3,1,1,1,2029-04-25 23:32:00,4-Comercial-frete
+97,2098,2024-04-27 17:07:00,3,2,1,9,,9-AET-transporte;5-Frete-transferencia
+98,2099,2024-04-29 02:35:00,1,6,3,1,,2-Receituario_Agronomico-receita;10-Certidao_Negativa-juridico
+99,2100,2024-04-29 09:09:00,1,4,1,10,,2-Receituario_Agronomico-receita;1-Admissional-contrato
+100,2101,2024-04-30 15:27:00,3,1,1,4,,9-AET-transporte

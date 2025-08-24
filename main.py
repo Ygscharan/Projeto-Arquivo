@@ -145,44 +145,44 @@ def ranking_prateleiras():
         total_caixas = len(getattr(p, 'caixas', []))
         print(f"{idx}. Prateleira ID {p.id} ({p.setor}-{p.corredor}): {total_caixas} caixa(s)")
 
-def mostrar_prateleira(prateleira, prateleiras_mesmo_setor):
-
-    max_colunas = max(p.max_colunas for p in prateleiras_mesmo_setor)
-    max_niveis = max(p.max_niveis for p in prateleiras_mesmo_setor)
-
-    
-    caixas = {}
-    for p in prateleiras_mesmo_setor:        
-        for caixa in getattr(p, 'caixas', []):
-            try:
-                nivel = int(getattr(caixa, 'nivel', p.nivel))
-                coluna = int(getattr(caixa, 'coluna', p.coluna))
-                caixas[(nivel, coluna)] = str(caixa.numero_caixa)
-            except Exception:
-                continue
-
-    
+def mostrar_prateleira(prateleira):
+    """
+    Exibe a prateleira em forma de tabela, mostrando apenas as caixas que pertencem a ela.
+    """
     print(f"\nPrateleira: {prateleira.setor} | Corredor: {prateleira.corredor}")
+
+    try:
+        max_colunas = int(prateleira.max_colunas)
+        max_niveis = int(prateleira.max_niveis)
+    except (ValueError, TypeError):
+        print("Erro: As dimensões (colunas/níveis) desta prateleira não são válidas.")
+        return
+
+    caixas_posicionadas = {}
+    for caixa in getattr(prateleira, 'caixas', []):
+        if caixa.nivel is not None and caixa.coluna is not None:
+            try:
+                nivel = int(caixa.nivel)
+                coluna = int(caixa.coluna)
+                caixas_posicionadas[(nivel, coluna)] = str(caixa.numero_caixa)
+            except (ValueError, TypeError):
+                continue 
+
     col_width = 8
-
-    
     sep = "+" + "+".join(["-" * col_width for _ in range(max_colunas + 1)]) + "+"
-
     
     print(sep)
     header = ["Nível"] + [str(c) for c in range(1, max_colunas + 1)]
     print("|" + "|".join(f"{h:^{col_width}}" for h in header) + "|")
     print(sep)
 
-    
     for n in range(1, max_niveis + 1):
         row = [f"{n:^{col_width}}"]
         for c in range(1, max_colunas + 1):
-            valor = caixas.get((n, c), "-")
+            valor = caixas_posicionadas.get((n, c), "-")
             row.append(f"{valor:^{col_width}}")
         print("|" + "|".join(row) + "|")
         print(sep)
-
 
 
 def visualizar_prateleira_tabela(prateleira_id):
@@ -190,44 +190,8 @@ def visualizar_prateleira_tabela(prateleira_id):
     if not prateleira:
         print("Prateleira não encontrada.")
         return
-
-    todas = repo_prateleira.get_all()
-    mesmas = [p for p in todas if p.setor == prateleira.setor and str(p.corredor) == str(prateleira.corredor)]
     
-    try:
-        niveis_existentes = set(int(p.max_niveis) for p in mesmas)
-        colunas_existentes = set(int(p.max_colunas) for p in mesmas)
-        max_cols = max(colunas_existentes) if colunas_existentes else 6
-        max_nivs = max(niveis_existentes) if niveis_existentes else 1
-
-        colunas = list(range(1, max_cols + 1))
-        
-        tabela = {nivel: {col: '-' for col in colunas} for nivel in range(1, max_nivs + 1)}
-        
-        for p in mesmas:
-            for c in getattr(p, 'caixas', []):
-                if c.nivel is not None and c.coluna is not None:
-                    nivel_caixa = int(c.nivel)
-                    coluna_caixa = int(c.coluna)
-                    if nivel_caixa in tabela and coluna_caixa in tabela[nivel_caixa]:
-                        tabela[nivel_caixa][coluna_caixa] = str(c.numero_caixa)
-    except (ValueError, TypeError) as e:
-        print(f"Erro ao processar dimensões da prateleira: {e}")
-        return
-    
-    col_width = 8
-    header = ["Nível"] + [str(col) for col in colunas]
-    sep = "+" + "+".join(["-"*col_width for _ in header]) + "+"
-    print(f"\nPrateleira: {prateleira.setor} | Corredor: {prateleira.corredor}")
-    print(sep)
-    print("|" + "|".join(f"{h:^{col_width}}" for h in header) + "|")
-    print(sep)
-    for nivel in range(1, max_nivs + 1):
-        row = [f"{nivel:^{col_width}}"]
-        for col in colunas:
-            row.append(f"{tabela[nivel][col]:^{col_width}}")
-        print("|" + "|".join(row) + "|")
-        print(sep)
+    mostrar_prateleira(prateleira)
 
 def cadastrar_usuario():
     print("\n--- Cadastro de Novo Usuário ---")
@@ -359,99 +323,124 @@ def alterar_usuario():
     print("Informações do usuário alteradas com sucesso!")
 
 def importar_caixas_csv():
-    BATCH_SIZE = 100  
-
+    BATCH_SIZE = 100 
     csv_dir = "CSV"
     if not os.path.isdir(csv_dir):
-        print(f"Erro: A pasta '{csv_dir}' não foi encontrada. Por favor, crie-a e coloque seus arquivos .csv dentro dela.")
+        print(f"Erro: A pasta '{csv_dir}' não foi encontrada.")
         return
-
     csv_files = [f for f in os.listdir(csv_dir) if f.lower().endswith('.csv')]
-
     if not csv_files:
         print(f"Nenhum arquivo .csv encontrado na pasta '{csv_dir}'.")
         return
-
     print("\nArquivos CSV disponíveis para importação:")
     for i, filename in enumerate(csv_files, 1):
         print(f"{i}. {filename}")
-
     try:
-        choice = int(input("Escolha o número do arquivo que deseja importar (ou 0 para cancelar): "))
+        choice = int(input("Escolha o número do arquivo (ou 0 para cancelar): "))
         if choice == 0:
-            print("Importação cancelada.")
-            return
-        chosen_file = csv_files[choice - 1]
-        caminho_arquivo = os.path.join(csv_dir, chosen_file)
+            print("Importação cancelada."); return
+        caminho_arquivo = os.path.join(csv_dir, csv_files[choice - 1])
     except (ValueError, IndexError):
-        print("Escolha inválida.")
-        return
+        print("Escolha inválida."); return
 
     try:
-        with open(caminho_arquivo, mode='r', encoding='utf-8') as f:
-            total_rows = sum(1 for row in f) - 1  
+        with open(caminho_arquivo, mode='r', encoding='utf-8-sig') as f:
+            total_rows = sum(1 for row in f) - 1
 
-        with open(caminho_arquivo, mode='r', encoding='utf-8') as file:
+        with open(caminho_arquivo, mode='r', encoding='utf-8-sig') as file:
             reader = csv.DictReader(file)
             
+            # --- LÓGICA DE IMPORTAÇÃO CORRIGIDA E MELHORADA ---
             print("Iniciando importação...")
             sucesso = 0
             falha = 0
+            
+            # Cache para documentos já buscados/criados, para evitar buscas repetidas no banco
+            documentos_cache = {}
 
-
-            for row_num, row in enumerate(tqdm(reader, total=total_rows, desc="Importando Caixas"), start=1):
+            for row_num, row in enumerate(tqdm(reader, total=total_rows, desc="Importando Caixas"), start=2):
                 try:
-
+                    # Validação de número de caixa (mantém a lógica anterior)
                     numero_caixa = int(row['numero_caixa'])
-                    
+                    if repo_caixa.numero_exists(numero_caixa):
+                        raise ValueError(f"Número de caixa {numero_caixa} já existe.")
+
+                    # Processamento da data de eliminação
                     data_eliminacao_str = row.get('data_eliminacao', '').strip()
                     data_eliminacao = parse_data_flexivel(data_eliminacao_str) if data_eliminacao_str else None
-                    
-                    unidade_codigo_str = row['unidade_codigo']
-                    unidade = repo_unidade.get_by_codigo(int(unidade_codigo_str))
+
+                    # Processamento da unidade
+                    unidade = repo_unidade.get_by_id(int(row['unidade_id']))
                     if not unidade:
-                        raise ValueError(f"Unidade com código '{unidade_codigo_str}' não encontrada.")
-
+                        raise ValueError(f"Unidade com ID '{row['unidade_id']}' não encontrada.")
+                    
+                    # Processamento da prateleira e posição
+                    prateleira = repo_prateleira.get_by_id(int(row['prateleira_id'])) if row.get('prateleira_id') else None
+                    if prateleira_id_str := row.get('prateleira_id', ''):
+                        prateleira = repo_prateleira.get_by_id(int(prateleira_id_str))
+                        if not prateleira:
+                             tqdm.write(f"Aviso na linha {row_num}: Prateleira ID '{prateleira_id_str}' não encontrada. Caixa ficará avulsa.")
+                    
+                    # --- LÓGICA DE DOCUMENTOS CORRIGIDA ---
                     docs_associados = []
-                    documentos_titulos_str = row.get('documentos_titulos', '').strip()
-                    if documentos_titulos_str:
-                        titulos = [t.strip() for t in documentos_titulos_str.split(';')]
-                        for titulo in titulos:
-                            if not titulo: continue
-                            doc = repo_documento.get_by_titulo(titulo)
-                            if not doc:
+                    # Lê a coluna 'documento' do novo CSV
+                    documentos_str = row.get('documento', '').strip()
+                    if documentos_str:
+                        # Separa múltiplos documentos que estão na mesma célula
+                        documentos_no_csv = [d.strip() for d in documentos_str.split(';')]
+                        for doc_info in documentos_no_csv:
+                            if not doc_info: continue
+                            
+                            # Tenta extrair ID, Título e Tipo
+                            try:
+                                doc_id_str, doc_titulo, doc_tipo = doc_info.split('-', 2)
+                                doc_id = int(doc_id_str)
 
-                                tqdm.write(f"  -> Documento '{titulo}' não encontrado, criando um novo.")
-                                doc = Documento(titulo=titulo, tipo="Importado via CSV", data_emissao=datetime.now())
-                                repo_documento.session.add(doc)
-                            docs_associados.append(doc)
+                                # Verifica se o documento já está no cache
+                                if doc_id in documentos_cache:
+                                    docs_associados.append(documentos_cache[doc_id])
+                                else:
+                                    # Se não está no cache, busca no banco
+                                    doc_existente = repo_documento.get_by_id(doc_id)
+                                    if doc_existente:
+                                        documentos_cache[doc_id] = doc_existente
+                                        docs_associados.append(doc_existente)
+                                    else:
+                                        # Se não existe no banco, cria um novo
+                                        tqdm.write(f"  -> Documento '{doc_titulo}' (ID: {doc_id}) não encontrado, criando novo.")
+                                        novo_doc = Documento(id=doc_id, titulo=doc_titulo, tipo=doc_tipo, data_emissao=datetime.datetime.now())
+                                        repo_documento.session.add(novo_doc)
+                                        documentos_cache[doc_id] = novo_doc
+                                        docs_associados.append(novo_doc)
+                            except ValueError:
+                                tqdm.write(f"Aviso na linha {row_num}: Formato de documento inválido ('{doc_info}'). Documento ignorado.")
+                                continue
 
+                    # Cria o objeto Caixa com todos os dados
                     nova_caixa = Caixa(
                         numero_caixa=numero_caixa,
-                        data_criacao=datetime.now(),
+                        data_criacao=datetime.datetime.now(),
                         data_eliminacao=data_eliminacao,
                         unidade=unidade,
-                        documentos=docs_associados
+                        prateleira=prateleira,
+                        coluna=row.get('coluna'),
+                        nivel=row.get('nivel'),
+                        documentos=docs_associados # Adiciona a lista de documentos
                     )
                     repo_caixa.session.add(nova_caixa)
                     sucesso += 1
 
-                    if row_num % BATCH_SIZE == 0:
-                        repo_caixa.session.commit()
-
                 except (ValueError, KeyError) as e:
-                    repo_caixa.session.rollback()
-                    tqdm.write(f"Erro na linha {row_num + 1}: {e}. Verifique o formato do CSV. Caixa não importada.")
+                    tqdm.write(f"Erro na linha {row_num}: {e}. Caixa não importada.")
                     falha += 1
             
+            # Commit final para salvar tudo no banco
             repo_caixa.session.commit()
             print(f"\nImportação concluída! {sucesso} caixas criadas, {falha} falhas.")
 
-    except FileNotFoundError:
-        print(f"Erro: Arquivo não encontrado em '{caminho_arquivo}'")
     except Exception as e:
-        print(f"Ocorreu um erro inesperado ao processar o arquivo: {e}")
-
+        repo_caixa.session.rollback()
+        print(f"Ocorreu um erro inesperado: {e}")
 
 
 
@@ -513,7 +502,7 @@ def menu_caixa():
 
                 pr = getattr(caixa, "prateleira", None)
                 if pr:
-                    prateleira_str = f"{pr.setor} - Corredor:{pr.corredor} Coluna:{pr.coluna} Nível:{pr.nivel}"
+                    prateleira_str = f"{pr.setor} - Corredor:{pr.corredor} Coluna:{caixa.coluna} Nível:{caixa.nivel}"
                 else:
                     prateleira_str = f"ID:{getattr(caixa, 'prateleira_id', 'None')}"
 
@@ -522,11 +511,21 @@ def menu_caixa():
                 print("Caixa não encontrada.")
 
         elif opcao == '3':
-            try:
-                numero = int(input("Número da Caixa: "))
-            except ValueError:
-                print("Número inválido.")
-                continue
+            while True:
+                try:
+                    numero_str = input("Número da Caixa (ou deixe em branco para cancelar): ").strip()
+                    if not numero_str:
+                        print("Cadastro cancelado.")
+                        return 
+
+                    numero = int(numero_str)
+
+                    if repo_caixa.numero_exists(numero):
+                        print(f"Erro: A caixa com o número {numero} já existe. Por favor, tente outro número.")
+                    else:
+                        break
+                except ValueError:
+                    print("Erro: Por favor, digite um número válido.")
 
             data_input = input("Data de eliminação (enter para CAIXA PERMANENTE) [dd-mm-YYYY | dd/mm/YYYY | YYYY-mm-dd]: ").strip()
             data_elim = None if data_input == "" else parse_data_flexivel(data_input)
@@ -807,22 +806,26 @@ def menu_caixa():
             caixas_na_prateleira = repo_caixa.get_by_prateleira(prateleira_destino.id)
             posicoes_ocupadas = set((int(c.coluna), int(c.nivel)) for c in caixas_na_prateleira if c.coluna is not None and c.nivel is not None)
             max_col, max_niv = int(prateleira_destino.max_colunas), int(prateleira_destino.max_niveis)
-            caixas_alocadas = 0
+            
+            caixas_para_mover = []
 
             for caixa in caixas_avulsas:
                 slot_encontrado = False
                 for nivel_atual in range(1, max_niv + 1):
                     for coluna_atual in range(1, max_col + 1):
                         if (coluna_atual, nivel_atual) not in posicoes_ocupadas:
+                            # Prepara a caixa para ser movida (atualiza em memória)
                             caixa.prateleira = prateleira_destino
                             caixa.coluna = str(coluna_atual)
                             caixa.nivel = str(nivel_atual)
-                            repo_caixa.update(caixa)
-                            posicoes_ocupadas.add((coluna_atual, nivel_atual))
                             
+                            # Adiciona à lista para salvar depois
+                            caixas_para_mover.append(caixa)
+                            
+                            posicoes_ocupadas.add((coluna_atual, nivel_atual))
                             print(f"Caixa {caixa.numero_caixa} movida para Prateleira ID {prateleira_destino.id} (Coluna: {coluna_atual}, Nível: {nivel_atual})")
+                            
                             slot_encontrado = True
-                            caixas_alocadas += 1
                             break
                     if slot_encontrado: break
                 
@@ -830,11 +833,15 @@ def menu_caixa():
                     print(f"\nNão há mais espaço na prateleira de destino.")
                     break
             
-            if caixas_alocadas > 0:
-                print(f"Operação concluída. Total de {caixas_alocadas} caixas movidas.")
+            if caixas_para_mover:
+                print(f"\nSalvando {len(caixas_para_mover)} caixas no banco de dados...")
+                # O repo.update já lida com o merge, commit e remove.
+                # Chamamos um por um, mas a sessão será renovada a cada chamada.
+                for caixa_movida in caixas_para_mover:
+                    repo_caixa.update(caixa_movida)
+                print("Operação concluída com sucesso!")
             else:
-                print("Nenhuma caixa foi movida. A prateleira pode estar cheia.")
-
+                print("Nenhuma caixa foi movida.")
 
         elif opcao == '6':
             caixas_disponiveis = repo_caixa.get_all()
